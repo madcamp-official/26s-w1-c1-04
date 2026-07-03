@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Web Escape Room</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div id="app">
+    <header class="topbar">
+      <h1 class="title">🚪 Web Escape Room</h1>
+      <div class="room-name" id="room-name">—</div>
+    </header>
+
+    <main class="stage">
+      <!-- 상호작용 오브젝트 영역 -->
+      <section class="objects" id="objects" aria-label="objects"></section>
+
+      <!-- 이동(문) 영역 -->
+      <nav class="doors" id="doors" aria-label="doors"></nav>
+    </main>
+
+    <footer class="bottombar">
+      <p class="hint">🔒 잠긴 문을 눌러 도어락에 코드를 입력하세요. (마스터코드: 1234)</p>
+    </footer>
+  </div>
+
+  <!-- 도어락 모달 -->
+  <div id="lock-overlay" class="lock-overlay" hidden>
+    <div class="lock-panel" role="dialog" aria-modal="true">
+      <button id="lock-close" class="lock-close" aria-label="닫기">✕</button>
+      <div class="lock-target" id="lock-target">— 로 가는 문</div>
+      <div class="lock-riddle" id="lock-riddle"></div>
+      <div class="lock-display" id="lock-display"></div>
+      <div class="lock-keypad" id="lock-keypad">
+        <button data-key="1">1</button>
+        <button data-key="2">2</button>
+        <button data-key="3">3</button>
+        <button data-key="4">4</button>
+        <button data-key="5">5</button>
+        <button data-key="6">6</button>
+        <button data-key="7">7</button>
+        <button data-key="8">8</button>
+        <button data-key="9">9</button>
+        <button data-key="clear" class="key-fn">⌫</button>
+        <button data-key="0">0</button>
+        <button data-key="enter" class="key-enter">✓</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast(알림) -->
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+  <script src="data.js"></script>
+  <script src="game.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
