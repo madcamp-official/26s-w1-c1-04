@@ -15,6 +15,10 @@ const R2 = "R2"; // Immersion Classroom
 const R3 = "R3"; // Open Space
 const R4 = "R4"; // Office
 const R5 = "R5"; // Outside (탈출구 밖)
+const R6 = "R6"; // 2F Corridor
+const R7 = "R7"; // 204
+const R8 = "R8"; // 205
+const R9 = "R9"; // 207
 
 const ROOMS = {
   [R0]: {
@@ -44,7 +48,7 @@ const ROOMS = {
     id: R2,
     name: "Immersion Classroom",
     description: "화이트보드에 이진수가 잔뜩 적혀 있는 몰입형 강의실. 노트북 화면엔 0과 1이 흐른다.",
-    objects: ["📋 화이트보드", "💻 노트북", "🔢 이진수표"],
+    objects: ["계산기"],
     puzzle: {
       id: "P2",
       question: "이진수 1011 을 십진수로 바꾸면? (숫자)",
@@ -81,6 +85,50 @@ const ROOMS = {
     puzzle: null,
     isExit: true, // 이 방에 도달하면 게임 클리어(탈출 성공)
   },
+  [R6]: {
+    id: R6,
+    name: "2F Corridor",
+    description: "2층 복도. 204호, 205호, 207호로 이어지는 문과 1층으로 돌아가는 계단이 보인다.",
+    objects: [],
+    puzzle: {
+      id: "P6",
+      question: "계단을 올라가려면 몇 층으로 가야 할까? (숫자)",
+      answer: "2",
+    },
+  },
+  [R7]: {
+    id: R7,
+    name: "204",
+    description: "아직 이름이 정해지지 않은 204호다.",
+    objects: ["빈 공간"],
+    puzzle: {
+      id: "P7",
+      question: "204호의 호수는? (숫자)",
+      answer: "204",
+    },
+  },
+  [R8]: {
+    id: R8,
+    name: "205",
+    description: "아직 이름이 정해지지 않은 205호다.",
+    objects: ["빈 공간"],
+    puzzle: {
+      id: "P8",
+      question: "205호의 호수는? (숫자)",
+      answer: "205",
+    },
+  },
+  [R9]: {
+    id: R9,
+    name: "207",
+    description: "아직 이름이 정해지지 않은 207호다.",
+    objects: ["빈 공간"],
+    puzzle: {
+      id: "P9",
+      question: "207호의 호수는? (숫자)",
+      answer: "207",
+    },
+  },
 };
 
 /**
@@ -92,11 +140,14 @@ const ROOMS = {
  *   requiresAll  = true 인 문은 다른 모든 문을 먼저 연 뒤에야 열 수 있다(최종 탈출문).
  */
 const EDGES = [
-  { id: "E1", from: R0, to: R1, gate: "P1" }, // Pantry 도어락
-  { id: "E2", from: R0, to: R2, gate: "P2" }, // Immersion 도어락
-  { id: "E3", from: R0, to: R3, gate: "P3" }, // Open Space 도어락
-  { id: "E4", from: R0, to: R4, gate: "P4" }, // Office 도어락
+  { id: "E1", from: R0, to: R1, gate: "P1", countsForExit: true }, // Pantry 도어락
+  { id: "E2", from: R0, to: R2, gate: "P2", countsForExit: true }, // Immersion 도어락
+  { id: "E3", from: R0, to: R3, gate: "P3", countsForExit: true }, // Open Space 도어락
+  { id: "E4", from: R0, to: R6, gate: "P6" }, // 계단
   { id: "E5", from: R0, to: R5, gate: "P0", requiresAll: true }, // 최종 탈출문
+  { id: "E6", from: R6, to: R7, gate: "P7" }, // 204호
+  { id: "E7", from: R6, to: R8, gate: "P8" }, // 205호
+  { id: "E8", from: R6, to: R9, gate: "P9" }, // 207호
 ];
 
 const START_ROOM = R0;

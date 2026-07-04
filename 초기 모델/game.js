@@ -55,7 +55,7 @@ const Game = (() => {
 
   // 최종 탈출문을 제외한 모든 문이 열렸는가?
   function allDoorsOpenedExceptFinal() {
-    return EDGES.filter((e) => !e.requiresAll).every(
+    return EDGES.filter((e) => e.countsForExit).every(
       (e) => state.unlocked[e.id]
     );
   }

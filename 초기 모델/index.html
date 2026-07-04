@@ -9,7 +9,7 @@
 <body>
   <div id="app">
     <header class="topbar">
-      <h1 class="title">🚪 Web Escape Room</h1>
+      <h1 class="title">Web Escape Room</h1>
       <div class="room-name" id="room-name">—</div>
     </header>
 
@@ -22,7 +22,7 @@
     </main>
 
     <footer class="bottombar">
-      <p class="hint">🔒 잠긴 문을 눌러 도어락에 코드를 입력하세요. (마스터코드: 1234)</p>
+      <p class="hint">잠긴 문을 눌러 도어락에 코드를 입력하세요. (마스터코드: 1234)</p>
     </footer>
   </div>
 
@@ -46,6 +46,24 @@
         <button data-key="clear" class="key-fn">⌫</button>
         <button data-key="0">0</button>
         <button data-key="enter" class="key-enter">✓</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 계산기 문제 모달 -->
+  <div id="calc-overlay" class="lock-overlay" hidden>
+    <div class="calc-panel" role="dialog" aria-modal="true" aria-labelledby="calc-title">
+      <button id="calc-close" class="lock-close" aria-label="닫기">✕</button>
+      <div class="lock-target" id="calc-title">계산기 문제</div>
+      <p class="calc-question">1, 1, 5, 8을 모두 한 번씩 사용해서 10을 만드세요.</p>
+      <div class="calc-display" id="calc-expression">식을 입력하세요</div>
+      <div class="calc-value" id="calc-value">현재 값: —</div>
+      <div class="calc-numbers" id="calc-numbers"></div>
+      <div class="calc-ops" id="calc-ops"></div>
+      <div class="calc-actions">
+        <button id="calc-undo" type="button">되돌리기</button>
+        <button id="calc-reset" type="button">초기화</button>
+        <button id="calc-submit" type="button">확인</button>
       </div>
     </div>
   </div>
