@@ -22,7 +22,11 @@
     </main>
 
     <footer class="bottombar">
+<<<<<<< HEAD:초기 모델/index.html
       <p class="hint">잠긴 문을 눌러 도어락에 코드를 입력하세요. (마스터코드: 1234)</p>
+=======
+      <p class="hint">🔢 방문은 도어락 코드로, 🪜 계단은 그 층의 방을 모두 풀면 열립니다. (마스터코드: 1234)</p>
+>>>>>>> 4978512d26472292745cbcca8cd84067865ae7fe:index.html
     </footer>
   </div>
 
@@ -50,6 +54,7 @@
     </div>
   </div>
 
+<<<<<<< HEAD:초기 모델/index.html
   <!-- 계산기 문제 모달 -->
   <div id="calc-overlay" class="lock-overlay" hidden>
     <div class="calc-panel" role="dialog" aria-modal="true" aria-labelledby="calc-title">
@@ -64,6 +69,33 @@
         <button id="calc-undo" type="button">되돌리기</button>
         <button id="calc-reset" type="button">초기화</button>
         <button id="calc-submit" type="button">확인</button>
+=======
+  <!-- Make 10 퍼즐 모달 -->
+  <div id="make10-overlay" class="lock-overlay" hidden>
+    <div class="make10-panel" role="dialog" aria-modal="true">
+      <button id="make10-close" class="lock-close" aria-label="닫기">✕</button>
+      <div class="make10-title">🔢 10 만들기</div>
+      <p class="make10-desc">
+        네 숫자를 <b>모두 한 번씩</b> 사용하고 <b>＋ − × ÷ ( )</b> 로 <b>10</b>을 만드세요.
+      </p>
+
+      <div class="make10-screen">
+        <div class="make10-expr" id="make10-expr"></div>
+        <div class="make10-eq">
+          = <span id="make10-val">?</span>
+          <span class="make10-goal">/ 10</span>
+        </div>
+      </div>
+
+      <div class="make10-tiles" id="make10-tiles"></div>
+      <div class="make10-ops" id="make10-ops"></div>
+
+      <div class="make10-actions">
+        <button id="make10-undo" class="m10-fn">⌫ 되돌리기</button>
+        <button id="make10-reset" class="m10-fn">초기화</button>
+        <button id="make10-hint" class="m10-fn">💡 힌트</button>
+        <button id="make10-check" class="m10-check">확인 ✓</button>
+>>>>>>> 4978512d26472292745cbcca8cd84067865ae7fe:index.html
       </div>
     </div>
   </div>

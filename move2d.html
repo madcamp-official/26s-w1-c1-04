@@ -535,9 +535,9 @@ const GLYPH = { cabinet:"cabinet", i_board:"board", i_phone:"phone", i_clock:"cl
 function drawGlyph(t,x,y){
   ctx.save(); ctx.translate(x,y); ctx.lineWidth=1.7; ctx.lineCap="round"; ctx.lineJoin="round";
   // 바닥 그림자 (오브젝트가 바닥에 놓인 느낌)
-  ctx.save(); const a0=ctx.globalAlpha; ctx.globalAlpha=a0*0.55; ctx.fillStyle="#000"; ctx.beginPath(); ctx.ellipse(1,12,11,3.6,0,0,7); ctx.fill(); ctx.restore();
-  const g=ctx.createLinearGradient(0,-12,0,13); g.addColorStop(0,"#38352f"); g.addColorStop(.55,"#252320"); g.addColorStop(1,"#161513"); // 위가 밝은 명암
-  const ST="#d6cfbe", FL=g;
+  ctx.save(); const a0=ctx.globalAlpha; ctx.globalAlpha=a0*0.5; ctx.fillStyle="#000"; ctx.beginPath(); ctx.ellipse(1,12,11,3.6,0,0,7); ctx.fill(); ctx.restore();
+  const g=ctx.createLinearGradient(0,-12,0,13); g.addColorStop(0,"#26241f"); g.addColorStop(.55,"#1a1815"); g.addColorStop(1,"#100f0d"); // 어두운 명암
+  const ST="#8f877a", FL=g;
   ctx.strokeStyle=ST; ctx.fillStyle=FL;
   const rp=(x,y,w,h,r)=>path_rr(x,y,w,h,r), fs=()=>{ctx.fill();ctx.stroke();};
   const dline=(...p)=>{ctx.beginPath();ctx.moveTo(p[0],p[1]);for(let i=2;i<p.length;i+=2)ctx.lineTo(p[i],p[i+1]);ctx.stroke();};
@@ -683,27 +683,17 @@ function render(){
 
   ctx.restore();
 
-  // ---- 화면공간 조명 (작은 앰비언트 + 손전등 앞쪽 빔) ----
+  // ---- 화면공간 조명 (원형: 손전등 없으면 매우 어둡고, 들면 원이 커져 조금 더 보인다) ----
   const sx=view.ox+player.x*view.s, sy=view.oy+player.y*view.s, sc=view.s/1.4;
   const breathe = 1 + 0.05*Math.sin(pulse*0.55);
-  const ambTarget = gameState.hasFlashlight ? (gameState.flashlight?165:135) : 92;   // 손전등 켜도 좁게 유지
-  const Ramb = lerp(92, ambTarget, rev) * sc * (rev<0.999 ? breathe : (0.96+0.04*flick));
-  const dg=ctx.createRadialGradient(sx,sy,Ramb*(0.05+0.13*rev),sx,sy,Ramb);
-  dg.addColorStop(0,   "rgba(3,3,4,"+lerp(0.10,0,   rev).toFixed(3)+")");
-  dg.addColorStop(0.40,"rgba(3,3,4,"+lerp(0.42,0.12,rev).toFixed(3)+")");
-  dg.addColorStop(0.72,"rgba(2,2,3,"+lerp(0.86,0.60,rev).toFixed(3)+")");
-  dg.addColorStop(1,   "rgba(0,0,1,"+lerp(0.995,0.97,rev).toFixed(3)+")");        // 가장자리는 손전등 있어도 거의 칠흑
+  const RTarget = gameState.hasFlashlight ? (gameState.flashlight?300:150) : 88;   // 없으면 매우 좁게 · 들면 원형으로 확장
+  const R = lerp(88, RTarget, rev) * sc * (rev<0.999 ? breathe : (0.97+0.03*flick));
+  const dg=ctx.createRadialGradient(sx,sy,R*(0.04+0.22*rev),sx,sy,R);
+  dg.addColorStop(0,    "rgba(3,3,4,"+lerp(0.14,0,   rev).toFixed(3)+")");
+  dg.addColorStop(0.45, "rgba(3,3,4,"+lerp(0.50,0.13,rev).toFixed(3)+")");
+  dg.addColorStop(0.78, "rgba(2,2,3,"+lerp(0.90,0.58,rev).toFixed(3)+")");
+  dg.addColorStop(1,    "rgba(0,0,1,"+lerp(0.997,0.94,rev).toFixed(3)+")");        // 원 밖은 여전히 칠흑
   ctx.fillStyle=dg; ctx.fillRect(0,0,W,H);
-
-  // 손전등 앞쪽 빔 — 어둠을 도려내 '진행 방향'만 좁게 비춘다
-  const beamLen = 315*sc*(0.9+0.1*flick), beamHalf = 0.42;
-  const beamPath = ()=>{ ctx.beginPath(); ctx.moveTo(sx,sy); ctx.arc(sx,sy,beamLen,player.facing-beamHalf,player.facing+beamHalf); ctx.closePath(); };
-  if(gameState.hasFlashlight && gameState.flashlight && rev>0.55){
-    ctx.save(); beamPath(); ctx.clip(); ctx.globalCompositeOperation="destination-out";
-    const cg=ctx.createRadialGradient(sx,sy,Ramb*0.5,sx,sy,beamLen);
-    cg.addColorStop(0,"rgba(0,0,0,0.95)"); cg.addColorStop(0.55,"rgba(0,0,0,0.5)"); cg.addColorStop(1,"rgba(0,0,0,0)");
-    ctx.fillStyle=cg; ctx.fillRect(0,0,W,H); ctx.restore();
-  }
 
   // 다이제틱 발광 — 손전등 전에만
   if(rev<0.98){
@@ -722,14 +712,11 @@ function render(){
     ctx.restore();
   }
 
-  // 따뜻한 빛 틴트(작은 앰비언트 + 빔) + 리빌 블룸
+  // 따뜻한 빛(원형) + 리빌 블룸
   if(gameState.hasFlashlight){ ctx.save(); ctx.globalCompositeOperation="lighter";
-    if(gameState.flashlight){
-      const wg=ctx.createRadialGradient(sx,sy,0,sx,sy,Ramb*1.35); wg.addColorStop(0,"rgba(224,188,120,"+(0.085*flick)+")"); wg.addColorStop(1,"rgba(224,188,120,0)"); ctx.fillStyle=wg; ctx.fillRect(0,0,W,H);
-      if(rev>0.55){ ctx.save(); beamPath(); ctx.clip(); const bw=ctx.createRadialGradient(sx,sy,0,sx,sy,beamLen); bw.addColorStop(0,"rgba(230,192,124,"+(0.075*flick)+")"); bw.addColorStop(1,"rgba(230,192,124,0)"); ctx.fillStyle=bw; ctx.fillRect(0,0,W,H); ctx.restore(); }
-    }
+    if(gameState.flashlight){ const wg=ctx.createRadialGradient(sx,sy,0,sx,sy,R*0.8); wg.addColorStop(0,"rgba(224,188,120,"+(0.07*flick)+")"); wg.addColorStop(1,"rgba(224,188,120,0)"); ctx.fillStyle=wg; ctx.fillRect(0,0,W,H); }
     const bloom = rev<0.999 ? Math.sin(Math.min(rev,1)*Math.PI)*0.16 : 0;
-    if(bloom>0.001){ const bg=ctx.createRadialGradient(sx,sy,0,sx,sy,Ramb*2.4); bg.addColorStop(0,"rgba(224,188,120,"+bloom+")"); bg.addColorStop(1,"rgba(224,188,120,0)"); ctx.fillStyle=bg; ctx.fillRect(0,0,W,H); }
+    if(bloom>0.001){ const bg=ctx.createRadialGradient(sx,sy,0,sx,sy,R*1.2); bg.addColorStop(0,"rgba(224,188,120,"+bloom+")"); bg.addColorStop(1,"rgba(224,188,120,0)"); ctx.fillStyle=bg; ctx.fillRect(0,0,W,H); }
     ctx.restore(); }
 
   ctx.save(); ctx.globalAlpha=lerp(0.11,0.06,rev); ctx.fillStyle=getGrain(); ctx.fillRect(0,0,W,H); ctx.restore();

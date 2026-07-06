@@ -1,13 +1,17 @@
 /**
  * data.js
- * 맵 데이터 정의 (Graph 구조).
- * NFR: Room / Edge / Puzzle 추가·수정이 쉬운 구조로 데이터를 이곳에 모아둔다.
+ * 5층 건물 맵 데이터 (Graph 구조).
  *
- * - ROOMS : Vertex(방) 정의. objects = 상호작용 오브젝트, puzzle = 방 퍼즐.
- * - EDGES : 방 사이 통로. from/to 는 무향(양방향)으로 취급한다.
- *           unlockedBy = 이 Edge를 여는 방의 puzzle id.
+ * 구조
+ *  - 각 층에는 복도(corridor)가 있고, 복도에서 방(room)으로 통하는 문이 있다.
+ *  - 방문(door)에는 도어락이 있고, 그 방 퍼즐의 정답(코드) 또는 마스터코드(1234)로 연다.
+ *  - 계단(stair)은 위/아래 층 복도를 잇는다. 그 층의 방을 모두 풀면 자동으로 열린다.
+ *  - 5층 복도에서 옥상(rooftop, exit)으로 나가면 탈출 성공.
+ *
+ * 확장(NFR): 방/퍼즐/계단을 ROOMS·EDGES 배열에 추가만 하면 된다.
  */
 
+<<<<<<< HEAD:초기 모델/data.js
 // ---- Room ID 상수 ----
 const R0 = "R0"; // Corridor
 const R1 = "R1"; // Pantry
@@ -20,30 +24,93 @@ const R7 = "R7"; // 204
 const R8 = "R8"; // 205
 const R9 = "R9"; // 207
 
+=======
+>>>>>>> 4978512d26472292745cbcca8cd84067865ae7fe:data.js
 const ROOMS = {
-  [R0]: {
-    id: R0,
-    name: "Corridor",
-    description: "사방으로 문이 나 있는 복도. 벽 끝에는 밖으로 통하는 육중한 탈출문이 보인다.",
-    objects: ["🪟 창문", "🖼️ 그림", "🕯️ 촛대"],
+  // ===== 1층: 로비 =====
+  C1: {
+    id: "C1", floor: 1, name: "1F 로비", isCorridor: true,
+    description: "출입문은 굳게 잠겼다. 리셉션과 보안실로 통하는 문, 그리고 위층 계단이 보인다.",
+    objects: ["🚪 정문(잠김)", "🪧 안내판", "🪜 계단"],
+  },
+  reception: {
+    id: "reception", floor: 1, name: "리셉션",
+    description: "방명록이 펼쳐진 안내 데스크. 오늘과 어제의 방문객 수가 적혀 있다.",
+    objects: ["📖 방명록", "☎️ 전화기", "🔔 벨"],
+    puzzle: { id: "P_rec", question: "방명록: 오늘 방문객 7명, 어제 5명. 이틀 합계는? (숫자)", answer: "12" },
+  },
+  security: {
+    id: "security", floor: 1, name: "보안실",
+    description: "모니터가 가득한 보안실. 금고 옆에 소수(prime)에 대한 힌트가 적혀 있다.",
+    objects: ["🖥️ CCTV", "🔐 금고", "🗝️ 열쇠고리"],
+    puzzle: { id: "P_sec", question: "10보다 작은 소수 중 가장 작은 세 개(2,3,5)의 합은? (숫자)", answer: "10" },
+  },
+
+  // ===== 2층: 식당 =====
+  C2: {
+    id: "C2", floor: 2, name: "2F 홀", isCorridor: true,
+    description: "음식 냄새가 남아 있는 2층 홀. 주방과 창고로 가는 문이 있다.",
+    objects: ["🪑 테이블", "🖼️ 그림", "🪜 계단"],
+  },
+  kitchen: {
+    id: "kitchen", floor: 2, name: "주방",
+    description: "달걀 판이 쌓인 주방. 요리사가 급히 나간 흔적이 있다.",
+    objects: ["🥚 달걀 2판", "🔪 칼", "🍳 프라이팬"],
+    puzzle: { id: "P_kit", question: "달걀 2판(한 판 30알) 중 15알을 썼다. 남은 알은? (숫자)", answer: "45" },
+  },
+  storage: {
+    id: "storage", floor: 2, name: "창고",
+    description: "상자가 반듯하게 쌓인 창고. 한 줄에 5개씩, 여러 줄이다.",
+    objects: ["📦 상자더미", "🧹 빗자루", "🪣 양동이"],
+    puzzle: { id: "P_sto", question: "상자가 한 줄에 5개씩 4줄로 쌓여 있다. 모두 몇 개? (숫자)", answer: "20" },
+  },
+
+  // ===== 3층: 연구소 =====
+  C3: {
+    id: "C3", floor: 3, name: "3F 홀", isCorridor: true,
+    description: "형광등이 깜빡이는 연구소 층. 실험실과 서버실로 통한다.",
+    objects: ["🧯 소화기", "📃 공지", "🪜 계단"],
+  },
+  lab: {
+    id: "lab", floor: 3, name: "실험실",
+    description: "시험관마다 숫자 라벨이 붙어 있다: 3, 6, 11, 18, ?",
+    objects: ["🧪 시험관", "🔬 현미경", "📋 실험노트"],
+    puzzle: { id: "P_lab", question: "라벨 수열 3, 6, 11, 18, ? 다음에 올 수는? (숫자)", answer: "27" },
+  },
+  server: {
+    id: "server", floor: 3, name: "서버실",
+    description: "서버 랙의 콘솔에 「1 1 5 8 → 10?」 이 떠 있다. 숫자 잠금이 걸려 있다.",
+    objects: ["🖥️ 서버랙", "🔢 콘솔", "❄️ 냉방기"],
     puzzle: {
-      id: "P0",
-      // 최종 탈출문 코드
-      question: "무지개는 모두 몇 가지 색일까? (숫자)",
-      answer: "7",
+      id: "P_srv", type: "make10",
+      question: "1, 1, 5, 8 을 각각 한 번씩 써서 10을 만드세요.",
+      numbers: [1, 1, 5, 8], target: 10, hint: "8 ÷ (1 − 1 ÷ 5)",
     },
   },
-  [R1]: {
-    id: R1,
-    name: "Pantry",
-    description: "선반마다 통조림과 병들이 가득한 식료품 저장실. 바구니에 달걀 한 판이 놓여 있다.",
-    objects: ["🥫 통조림", "🥚 달걀 한 판", "🧺 바구니"],
+
+  // ===== 4층: 사무 =====
+  C4: {
+    id: "C4", floor: 4, name: "4F 홀", isCorridor: true,
+    description: "서류 냄새가 나는 사무 층. 사무실과 회의실이 있다.",
+    objects: ["🗄️ 파일함", "🪴 화분", "🪜 계단"],
+  },
+  office: {
+    id: "office", floor: 4, name: "사무실",
+    description: "캐비닛이 늘어선 사무실. 각 캐비닛에는 서랍이 여러 칸이다.",
+    objects: ["🗃️ 캐비닛 4개", "🖥️ 모니터", "📎 클립"],
+    puzzle: { id: "P_off", question: "캐비닛 4개, 각 캐비닛에 서랍 3칸. 서랍은 모두 몇 칸? (숫자)", answer: "12" },
+  },
+  meeting: {
+    id: "meeting", floor: 4, name: "회의실",
+    description: "화이트보드에 「3 4 6 8 → 10?」 이 적혀 있는 회의실.",
+    objects: ["📋 화이트보드", "🪑 회의탁자", "📽️ 프로젝터"],
     puzzle: {
-      id: "P1",
-      question: "달걀 한 판(30개)에서 6개를 요리에 썼다. 남은 달걀은? (숫자)",
-      answer: "24",
+      id: "P_mtg", type: "make10",
+      question: "3, 4, 6, 8 을 각각 한 번씩 써서 10을 만드세요.",
+      numbers: [3, 4, 6, 8], target: 10, hint: "3 × 4 − 8 + 6",
     },
   },
+<<<<<<< HEAD:초기 모델/data.js
   [R2]: {
     id: R2,
     name: "Immersion Classroom",
@@ -54,36 +121,25 @@ const ROOMS = {
       question: "이진수 1011 을 십진수로 바꾸면? (숫자)",
       answer: "11",
     },
+=======
+
+  // ===== 5층: 관제 & 옥상 =====
+  C5: {
+    id: "C5", floor: 5, name: "5F 홀", isCorridor: true,
+    description: "옥상으로 통하는 마지막 층. 관제실 문과 옥상 비상문이 보인다.",
+    objects: ["🚨 경광등", "📟 단말기", "🚪 옥상 비상문"],
+>>>>>>> 4978512d26472292745cbcca8cd84067865ae7fe:data.js
   },
-  [R3]: {
-    id: R3,
-    name: "Open Space",
-    description: "탁 트인 공용 공간. 화이트보드에 숫자 수열이 적혀 있다: 2, 6, 12, 20, ?",
-    objects: ["🛋️ 소파", "📈 수열 메모", "🪴 화분"],
-    puzzle: {
-      id: "P3",
-      question: "수열 2, 6, 12, 20, ? 다음에 올 수는? (숫자)",
-      answer: "30",
-    },
+  control: {
+    id: "control", floor: 5, name: "관제실",
+    description: "비상 콘솔이 있는 관제실. 옥상문을 여는 코드가 이진수로 표시돼 있다.",
+    objects: ["📟 비상콘솔", "🕹️ 조작반", "🔴 비상버튼"],
+    puzzle: { id: "P_ctl", question: "비상 코드: 이진수 1101 을 십진수로 바꾸면? (숫자)", answer: "13" },
   },
-  [R4]: {
-    id: R4,
-    name: "Office",
-    description: "서류가 쌓인 책상과 잠긴 캐비닛이 있는 사무실. 벽에 건물 층별 안내도가 붙어 있다.",
-    objects: ["🗄️ 캐비닛", "🏢 층별 안내도", "📎 서류더미"],
-    puzzle: {
-      id: "P4",
-      question: "1층에서 4층까지 걸어 올라간다. 층 사이 계단이 15칸이면 오른 계단은 모두 몇 칸? (숫자)",
-      answer: "45",
-    },
-  },
-  [R5]: {
-    id: R5,
-    name: "Outside",
-    description: "차가운 밤공기가 밀려온다. 당신은 마침내 건물 밖으로 나왔다!",
+  rooftop: {
+    id: "rooftop", floor: 5, name: "옥상", isExit: true,
+    description: "차가운 밤공기가 밀려온다. 당신은 마침내 건물 옥상으로 탈출했다!",
     objects: [],
-    puzzle: null,
-    isExit: true, // 이 방에 도달하면 게임 클리어(탈출 성공)
   },
   [R6]: {
     id: R6,
@@ -133,13 +189,12 @@ const ROOMS = {
 
 /**
  * Edge 정의.
- * Corridor는 모든 방과 연결되고, 일반 방끼리는 직접 연결되지 않는다.
- * 각 문(Edge)에는 도어락이 달려 있다.
- *   gate         = 이 문을 여는 코드가 되는 퍼즐 id (그 퍼즐의 answer가 정답 코드).
- *                  마스터코드 1234 로도 항상 열 수 있다.
- *   requiresAll  = true 인 문은 다른 모든 문을 먼저 연 뒤에야 열 수 있다(최종 탈출문).
+ *   kind: "door"  = 복도↔방. gate(퍼즐)의 정답 코드/1234로 연다.
+ *         "stair" = 복도↔복도. requires 퍼즐이 모두 clear 되면 자동으로 열린다.
+ *         "exit"  = 복도↔옥상. requires clear 시 열린다(최종 탈출문).
  */
 const EDGES = [
+<<<<<<< HEAD:초기 모델/data.js
   { id: "E1", from: R0, to: R1, gate: "P1", countsForExit: true }, // Pantry 도어락
   { id: "E2", from: R0, to: R2, gate: "P2", countsForExit: true }, // Immersion 도어락
   { id: "E3", from: R0, to: R3, gate: "P3", countsForExit: true }, // Open Space 도어락
@@ -148,7 +203,28 @@ const EDGES = [
   { id: "E6", from: R6, to: R7, gate: "P7" }, // 204호
   { id: "E7", from: R6, to: R8, gate: "P8" }, // 205호
   { id: "E8", from: R6, to: R9, gate: "P9" }, // 207호
+=======
+  // 1층
+  { id: "D_rec", kind: "door", from: "C1", to: "reception", gate: "P_rec" },
+  { id: "D_sec", kind: "door", from: "C1", to: "security", gate: "P_sec" },
+  { id: "S1", kind: "stair", from: "C1", to: "C2", requires: ["P_rec", "P_sec"] },
+  // 2층
+  { id: "D_kit", kind: "door", from: "C2", to: "kitchen", gate: "P_kit" },
+  { id: "D_sto", kind: "door", from: "C2", to: "storage", gate: "P_sto" },
+  { id: "S2", kind: "stair", from: "C2", to: "C3", requires: ["P_kit", "P_sto"] },
+  // 3층
+  { id: "D_lab", kind: "door", from: "C3", to: "lab", gate: "P_lab" },
+  { id: "D_srv", kind: "door", from: "C3", to: "server", gate: "P_srv" },
+  { id: "S3", kind: "stair", from: "C3", to: "C4", requires: ["P_lab", "P_srv"] },
+  // 4층
+  { id: "D_off", kind: "door", from: "C4", to: "office", gate: "P_off" },
+  { id: "D_mtg", kind: "door", from: "C4", to: "meeting", gate: "P_mtg" },
+  { id: "S4", kind: "stair", from: "C4", to: "C5", requires: ["P_off", "P_mtg"] },
+  // 5층
+  { id: "D_ctl", kind: "door", from: "C5", to: "control", gate: "P_ctl" },
+  { id: "X_roof", kind: "exit", from: "C5", to: "rooftop", requires: ["P_ctl"] },
+>>>>>>> 4978512d26472292745cbcca8cd84067865ae7fe:data.js
 ];
 
-const START_ROOM = R0;
+const START_ROOM = "C1";
 const ADMIN_PASSWORD = "1234";

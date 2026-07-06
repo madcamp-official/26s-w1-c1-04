@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>이동 화면 프로토타입 · MY_002</title>
+<style>
+  :root { --hud-bg: rgba(12,16,22,.72); --accent:#6ee7ff; }
+  * { box-sizing: border-box; }
+  html, body { margin:0; height:100%; overflow:hidden;
+    font-family:"Pretendard","Apple SD Gothic Neo",system-ui,sans-serif;
+    background:#05070a; color:#e8ecf2; }
+  #stage { position:fixed; inset:0; }
+  #scene { position:absolute; inset:0; width:100%; height:100%; display:block; }
+
+  /* 암전 오버레이 (0.1s 암전 → 0.1s 페이드인) */
+  #fade { position:absolute; inset:0; background:#000; opacity:0;
+    pointer-events:none; transition:opacity .1s ease; }
+
+  /* HUD */
+  .hud { position:absolute; background:var(--hud-bg); backdrop-filter:blur(6px);
+    border:1px solid rgba(255,255,255,.12); border-radius:12px; padding:12px 14px; }
+  #info { top:16px; left:16px; font-size:.85rem; line-height:1.7; }
+  #info .id { font-family:"Consolas",monospace; color:var(--accent); font-size:1rem; font-weight:700; }
+  #info .row { color:#aeb8c6; }
+  #info b { color:#fff; }
+  .mini-title { font-size:.68rem; color:#8b97a6; letter-spacing:.1em;
+    text-transform:uppercase; margin-bottom:6px; }
+  #minimap { display:block; margin-bottom:12px;
+    border:1px solid rgba(255,255,255,.08); border-radius:8px; background:rgba(0,0,0,.25); }
+
+  #legend { bottom:16px; left:16px; font-size:.78rem; color:#aeb8c6; line-height:1.7; }
+  #legend kbd { display:inline-block; min-width:20px; text-align:center;
+    background:#222a36; border:1px solid #39424f; border-bottom-width:2px;
+    border-radius:5px; padding:1px 6px; margin-right:4px; color:#dfe6ef;
+    font-family:"Consolas",monospace; }
+
+  /* 방향 컨트롤 */
+  #pad { position:absolute; right:20px; bottom:20px;
+    display:grid; grid-template-columns:repeat(3,52px); grid-template-rows:repeat(2,52px);
+    gap:8px; }
+  #pad button { border:1px solid rgba(255,255,255,.18); background:var(--hud-bg);
+    color:#e8ecf2; border-radius:12px; font-size:1.3rem; cursor:pointer;
+    transition:transform .07s, background .12s; }
+  #pad button:hover { background:rgba(40,48,60,.9); }
+  #pad button:active { transform:scale(.9); }
+  #pad button:disabled { opacity:.3; cursor:not-allowed; }
+  .b-left { grid-area:2/1; } .b-up { grid-area:1/2; }
+  .b-right { grid-area:2/3; } .b-down { grid-area:2/2; }
+
+  #toast { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%);
+    background:rgba(12,16,22,.92); border:1px solid rgba(255,255,255,.15);
+    padding:12px 20px; border-radius:12px; font-size:.95rem; opacity:0;
+    pointer-events:none; transition:opacity .2s; }
+  #toast.show { opacity:1; }
+</style>
+</head>
+<body>
+  <div id="stage">
+    <canvas id="scene"></canvas>
+    <div id="fade"></div>
+
+    <div id="info" class="hud">
+      <div class="mini-title">탐색 맵</div>
+      <canvas id="minimap"></canvas>
+      <div class="id" id="cur-id">MY_002_01_01</div>
+      <div class="row">이동 스팟(AA): <b id="cur-aa">01</b></div>
+      <div class="row">방향(B): <b id="cur-b">1</b> / 4</div>
+      <div class="row" id="cur-next">↑ 전진: —</div>
+    </div>
+
+    <div id="legend" class="hud">
+      <div><kbd>←</kbd> 좌회전 (B +1) &nbsp; <kbd>→</kbd> 우회전 (B −1)</div>
+      <div><kbd>↑</kbd> 전진 (다음 스팟, B 유지) &nbsp; <kbd>↓</kbd> 기능 없음</div>
+    </div>
+
+    <div id="pad">
+      <button class="b-up"    id="btn-up"    title="전진">↑</button>
+      <button class="b-left"  id="btn-left"  title="좌회전">←</button>
+      <button class="b-down"  id="btn-down"  title="기능 없음">↓</button>
+      <button class="b-right" id="btn-right" title="우회전">→</button>
+    </div>
+
+    <div id="toast"></div>
+  </div>
+
+<script>
+/* ===== 명세(화면 설명서.txt · MY_002) =====
+   - AA = 이동 스팟, B = 방향(1~4)
+   - 배경: background/AA_B.jpg  (없으면 플레이스홀더 렌더)
+   - ← : B +1 (4→1)   → : B −1 (1→4)
+   - ↑ : AA_B 로 지정된 다음 스팟(AA)으로 이동, B 유지 (없으면 이동 안 함)
+   - ↓ : 기능 없음
+   - 스팟 이동 전환: 0.1s 암전 → 0.1s 페이드인
+================================================ */
+
+// 스팟별 플레이스홀더 색상(hue). 실제 이미지가 있으면 무시됨.
+const SPOTS = { "01": { hue: 205 }, "02": { hue: 150 } };
+
+// 상방향키 이동 규칙: key `AA_B` -> 다음 AA (B는 유지)
+const MOVES = {
+  "01_3": "02",   // MY_002_01_3 -> MY_002_02_3
+  "02_1": "01",   // MY_002_02_1 -> MY_002_01_1
+};
+
+let AA = "01";
+let B = 1;
+let busy = false;         // 전환 중 입력 잠금
+let renderSeq = 0;        // 이미지 로드 경쟁 방지
+
+const idOf = (aa, b) => `MY_002_${aa}_${b}`;
+const imgPath = (aa, b) => `background/${aa}_${b}.jpg`;   // 실제 파일: 01_1.jpg ~ 02_4.jpg
+
+// ===== 미니맵 (Binding of Isaac 스타일) =====
+const START_AA = "01";
+const visited = new Set([START_AA]);           // 실제로 밟은 스팟
+// 사진 기준: B가 커지면 시야가 반시계(CCW)로 회전 → 미니맵도 동일하게.
+// 그 결과 →(우, B 감소)를 누르면 화살표가 시계방향(CW)으로 돈다.
+const DIR_DELTA = { 1: [0, -1], 2: [-1, 0], 3: [0, 1], 4: [1, 0] }; // 1↑ 2← 3↓ 4→
+
+// 이동 규칙(MOVES)과 방향으로 스팟 격자 좌표 자동 배치
+function computeLayout() {
+  const pos = {}; pos[START_AA] = [0, 0];
+  let changed = true, guard = 0;
+  while (changed && guard++ < 100) {
+    changed = false;
+    for (const key in MOVES) {
+      const [aa, b] = key.split("_");
+      const nxt = MOVES[key];
+      if (pos[aa] && !pos[nxt]) {
+        const d = DIR_DELTA[+b];
+        pos[nxt] = [pos[aa][0] + d[0], pos[aa][1] + d[1]];
+        changed = true;
+      }
+    }
+  }
+  return pos;
+}
+const LAYOUT = computeLayout();
+const LINKS = Object.keys(MOVES).map((k) => ({ from: k.split("_")[0], to: MOVES[k] }));
+
+const mm = document.getElementById("minimap");
+const mctx = mm.getContext("2d");
+
+function roundRect(c, x, y, w, h, r) {
+  c.beginPath();
+  c.moveTo(x + r, y); c.arcTo(x + w, y, x + w, y + h, r);
+  c.arcTo(x + w, y + h, x, y + h, r); c.arcTo(x, y + h, x, y, r);
+  c.arcTo(x, y, x + w, y, r); c.closePath();
+}
+
+function drawMinimap() {
+  // 알려진 스팟 = 방문했거나, 방문한 스팟과 연결된 곳
+  const known = new Set(visited);
+  LINKS.forEach((l) => {
+    if (visited.has(l.from) && LAYOUT[l.to]) known.add(l.to);
+    if (visited.has(l.to) && LAYOUT[l.from]) known.add(l.from);
+  });
+  const cells = [...known].filter((id) => LAYOUT[id]);
+  if (!cells.length) return;
+
+  const xs = cells.map((id) => LAYOUT[id][0]);
+  const ys = cells.map((id) => LAYOUT[id][1]);
+  const minX = Math.min(...xs), maxX = Math.max(...xs);
+  const minY = Math.min(...ys), maxY = Math.max(...ys);
+  const cw = 30, ch = 22, gap = 7, pad = 9;
+  const cols = maxX - minX + 1, rows = maxY - minY + 1;
+  const W = pad * 2 + cols * cw + (cols - 1) * gap;
+  const H = pad * 2 + rows * ch + (rows - 1) * gap;
+  const dpr = window.devicePixelRatio || 1;
+  mm.width = W * dpr; mm.height = H * dpr;
+  mm.style.width = W + "px"; mm.style.height = H + "px";
+  mctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  mctx.clearRect(0, 0, W, H);
+
+  const at = (id) => {
+    const [x, y] = LAYOUT[id];
+    return [pad + (x - minX) * (cw + gap), pad + (y - minY) * (ch + gap)];
+  };
+
+  // 연결선
+  mctx.strokeStyle = "rgba(255,255,255,.28)"; mctx.lineWidth = 2;
+  LINKS.forEach((l) => {
+    if (known.has(l.from) && known.has(l.to)) {
+      const a = at(l.from), b = at(l.to);
+      mctx.beginPath();
+      mctx.moveTo(a[0] + cw / 2, a[1] + ch / 2);
+      mctx.lineTo(b[0] + cw / 2, b[1] + ch / 2);
+      mctx.stroke();
+    }
+  });
+
+  // 셀
+  cells.forEach((id) => {
+    const [x, y] = at(id);
+    const isCur = id === AA;
+    const seen = visited.has(id);
+    roundRect(mctx, x, y, cw, ch, 5);
+    if (isCur) {
+      mctx.fillStyle = "rgba(110,231,255,.55)"; mctx.fill();
+      mctx.strokeStyle = "#6ee7ff"; mctx.lineWidth = 2; mctx.stroke();
+    } else if (seen) {
+      mctx.fillStyle = "rgba(110,231,255,.20)"; mctx.fill();
+      mctx.strokeStyle = "rgba(110,231,255,.5)"; mctx.lineWidth = 1.5; mctx.stroke();
+    } else { // 알지만 미탐색
+      mctx.setLineDash([3, 3]); mctx.strokeStyle = "rgba(255,255,255,.35)";
+      mctx.lineWidth = 1.2; mctx.stroke(); mctx.setLineDash([]);
+    }
+    mctx.fillStyle = isCur ? "#04121a" : "rgba(255,255,255,.7)";
+    mctx.font = '700 11px "Consolas",monospace';
+    mctx.textAlign = "center"; mctx.textBaseline = "middle";
+    mctx.fillText(id, x + cw / 2, y + ch / 2);
+    if (isCur) drawFacing(x, y, cw, ch, B);
+  });
+}
+
+// 현재 셀에 바라보는 방향 화살표
+function drawFacing(x, y, cw, ch, b) {
+  const cx = x + cw / 2, cy = y + ch / 2, d = DIR_DELTA[b];
+  const ex = cx + d[0] * (cw / 2 - 2), ey = cy + d[1] * (ch / 2 - 2);
+  mctx.save();
+  mctx.translate(ex, ey);
+  mctx.rotate(Math.atan2(d[1], d[0]));
+  mctx.fillStyle = "#6ee7ff";
+  mctx.beginPath(); mctx.moveTo(4, 0); mctx.lineTo(-2, -4); mctx.lineTo(-2, 4);
+  mctx.closePath(); mctx.fill();
+  mctx.restore();
+}
+
+const cv = document.getElementById("scene");
+const ctx = cv.getContext("2d");
+const fade = document.getElementById("fade");
+
+function fitCanvas() {
+  const dpr = window.devicePixelRatio || 1;
+  cv.width = Math.floor(innerWidth * dpr);
+  cv.height = Math.floor(innerHeight * dpr);
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  render();
+}
+addEventListener("resize", fitCanvas);
+
+// ---- 렌더: 디자인된 2D 씬 ----
+function render() {
+  updateHUD();
+  draw2DScene(AA, B);
+}
+
+const hsl = (h, s, l, a) =>
+  a == null ? `hsl(${h} ${s}% ${l}%)` : `hsl(${h} ${s}% ${l}% / ${a})`;
+
+function fillPoly(pts, style) {
+  ctx.beginPath();
+  ctx.moveTo(pts[0][0], pts[0][1]);
+  for (let i = 1; i < pts.length; i++) ctx.lineTo(pts[i][0], pts[i][1]);
+  ctx.closePath();
+  ctx.fillStyle = style; ctx.fill();
+}
+function glowAt(x, y, r, color) {
+  const g = ctx.createRadialGradient(x, y, 0, x, y, r);
+  g.addColorStop(0, color); g.addColorStop(1, "rgba(0,0,0,0)");
+  ctx.fillStyle = g; ctx.fillRect(x - r, y - r, r * 2, r * 2);
+}
+
+// 필름 그레인 (1회 생성)
+let grainPattern = null;
+function getGrain() {
+  if (grainPattern) return grainPattern;
+  const n = document.createElement("canvas");
+  n.width = n.height = 130;
+  const nc = n.getContext("2d");
+  const img = nc.createImageData(130, 130);
+  for (let i = 0; i < img.data.length; i += 4) {
+    const v = (Math.random() * 255) | 0;
+    img.data[i] = img.data[i + 1] = img.data[i + 2] = v; img.data[i + 3] = 255;
+  }
+  nc.putImageData(img, 0, 0);
+  grainPattern = ctx.createPattern(n, "repeat");
+  return grainPattern;
+}
+
+// 전진 가능하면 통로, 아니면 방향별 모티프
+// ===== 탑뷰(위에서 본 방) 렌더 =====
+function draw2DScene(aa, b) {
+  const W = innerWidth, H = innerHeight;
+  const warm = aa === "02";
+  const h = warm ? 24 : 206;                 // 스팟별 색 온도
+  ctx.clearRect(0, 0, W, H);
+  ctx.fillStyle = hsl(h, 16, 6); ctx.fillRect(0, 0, W, H);
+
+  // 방 사각형
+  const pad = Math.min(W, H) * 0.15;
+  const RX = pad, RY = pad, RW = W - pad * 2, RH = H - pad * 2;
+  const cx = RX + RW / 2, cy = RY + RH / 2;
+  const t = 15;                              // 벽 두께
+  const doorW = Math.min(RW, RH) * 0.24;
+
+  // 바닥
+  roundRect(ctx, RX, RY, RW, RH, 22);
+  let fg = ctx.createRadialGradient(cx, cy, 30, cx, cy, Math.max(RW, RH) * 0.72);
+  fg.addColorStop(0, hsl(h, 12, 21)); fg.addColorStop(1, hsl(h, 13, 11));
+  ctx.fillStyle = fg; ctx.fill();
+
+  // 바닥 타일 그리드
+  ctx.save();
+  roundRect(ctx, RX, RY, RW, RH, 22); ctx.clip();
+  ctx.strokeStyle = hsl(h, 10, 30, 0.16); ctx.lineWidth = 1;
+  const grid = Math.min(RW, RH) / 9;
+  for (let x = RX + grid; x < RX + RW; x += grid) { ctx.beginPath(); ctx.moveTo(x, RY); ctx.lineTo(x, RY + RH); ctx.stroke(); }
+  for (let y = RY + grid; y < RY + RH; y += grid) { ctx.beginPath(); ctx.moveTo(RX, y); ctx.lineTo(RX + RW, y); ctx.stroke(); }
+  ctx.restore();
+
+  // 가구 데코
+  drawDecor(aa, h, RX, RY, RW, RH);
+
+  // 벽 + 문
+  const sides = [
+    { b: 1, x1: RX, y1: RY, x2: RX + RW, y2: RY, horiz: true },            // ↑ top
+    { b: 3, x1: RX, y1: RY + RH, x2: RX + RW, y2: RY + RH, horiz: true },  // ↓ bottom
+    { b: 2, x1: RX, y1: RY, x2: RX, y2: RY + RH, horiz: false },           // ← left
+    { b: 4, x1: RX + RW, y1: RY, x2: RX + RW, y2: RY + RH, horiz: false }, // → right
+  ];
+  ctx.lineCap = "round";
+  sides.forEach((s) => {
+    const hasDoor = !!MOVES[`${aa}_${s.b}`];
+    const active = hasDoor && s.b === b;     // 지금 바라보는 문
+    const mx = (s.x1 + s.x2) / 2, my = (s.y1 + s.y2) / 2;
+    ctx.strokeStyle = hsl(h, 14, 30); ctx.lineWidth = t;
+    if (!hasDoor) {
+      ctx.beginPath(); ctx.moveTo(s.x1, s.y1); ctx.lineTo(s.x2, s.y2); ctx.stroke();
+    } else {
+      if (s.horiz) {
+        ctx.beginPath(); ctx.moveTo(s.x1, s.y1); ctx.lineTo(mx - doorW / 2, my); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(mx + doorW / 2, my); ctx.lineTo(s.x2, s.y2); ctx.stroke();
+      } else {
+        ctx.beginPath(); ctx.moveTo(s.x1, s.y1); ctx.lineTo(mx, my - doorW / 2); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(mx, my + doorW / 2); ctx.lineTo(s.x2, s.y2); ctx.stroke();
+      }
+      // 문턱: 지금 향한 문이면 cyan, 아니면 앰버
+      glowAt(mx, my, doorW * 0.75, active ? "rgba(110,231,255,0.4)" : hsl(38, 70, 50, 0.28));
+      ctx.strokeStyle = active ? "#6ee7ff" : hsl(38, 75, 58); ctx.lineWidth = 4;
+      ctx.beginPath();
+      if (s.horiz) { ctx.moveTo(mx - doorW / 2, my); ctx.lineTo(mx + doorW / 2, my); }
+      else { ctx.moveTo(mx, my - doorW / 2); ctx.lineTo(mx, my + doorW / 2); }
+      ctx.stroke();
+    }
+  });
+  ctx.lineCap = "butt";
+
+  // 플레이어 + 시야 콘
+  drawPlayer(cx, cy, b);
+
+  // 비네트 + 그레인
+  let vg = ctx.createRadialGradient(cx, cy, Math.min(W, H) * 0.2, cx, cy, Math.max(W, H) * 0.62);
+  vg.addColorStop(0, "rgba(0,0,0,0)"); vg.addColorStop(1, "rgba(0,0,0,0.6)");
+  ctx.fillStyle = vg; ctx.fillRect(0, 0, W, H);
+  ctx.save(); ctx.globalAlpha = 0.05; ctx.fillStyle = getGrain(); ctx.fillRect(0, 0, W, H); ctx.restore();
+}
+
+// 플레이어(원 + 방향 삼각형 + 시야 콘)
+function drawPlayer(cx, cy, b) {
+  const d = DIR_DELTA[b], ang = Math.atan2(d[1], d[0]);
+  ctx.save();
+  ctx.translate(cx, cy); ctx.rotate(ang);
+  let cg = ctx.createLinearGradient(0, 0, 165, 0);
+  cg.addColorStop(0, "rgba(110,231,255,0.26)"); cg.addColorStop(1, "rgba(110,231,255,0)");
+  ctx.fillStyle = cg;
+  ctx.beginPath(); ctx.moveTo(14, 0); ctx.lineTo(170, -82); ctx.lineTo(170, 82); ctx.closePath(); ctx.fill();
+  ctx.restore();
+
+  glowAt(cx, cy, 42, "rgba(110,231,255,0.28)");
+  ctx.fillStyle = "#0c1a24";
+  ctx.beginPath(); ctx.arc(cx, cy, 17, 0, 7); ctx.fill();
+  ctx.strokeStyle = "#6ee7ff"; ctx.lineWidth = 3;
+  ctx.beginPath(); ctx.arc(cx, cy, 17, 0, 7); ctx.stroke();
+
+  ctx.save(); ctx.translate(cx, cy); ctx.rotate(ang);
+  ctx.fillStyle = "#6ee7ff";
+  ctx.beginPath(); ctx.moveTo(24, 0); ctx.lineTo(9, -9); ctx.lineTo(9, 9); ctx.closePath(); ctx.fill();
+  ctx.restore();
+}
+
+// 가구 데코 (상대좌표 0~1)
+function drawDecor(aa, h, RX, RY, RW, RH) {
+  const items = aa === "02"
+    ? [ { x: 0.5, y: 0.22, w: 0.28, h: 0.12 }, { x: 0.16, y: 0.62, w: 0.08, h: 0.28 }, { x: 0.83, y: 0.68, w: 0.1, h: 0.16 } ]
+    : [ { x: 0.24, y: 0.2, w: 0.26, h: 0.1 }, { x: 0.79, y: 0.3, w: 0.12, h: 0.12 }, { x: 0.68, y: 0.78, w: 0.22, h: 0.07 } ];
+  items.forEach((it) => {
+    const w = it.w * RW, hh = it.h * RH;
+    const x = RX + it.x * RW - w / 2, y = RY + it.y * RH - hh / 2;
+    ctx.fillStyle = "rgba(0,0,0,0.32)";
+    roundRect(ctx, x + 3, y + 5, w, hh, 6); ctx.fill();
+    let g = ctx.createLinearGradient(0, y, 0, y + hh);
+    g.addColorStop(0, hsl(h, 14, 33)); g.addColorStop(1, hsl(h, 14, 23));
+    roundRect(ctx, x, y, w, hh, 6); ctx.fillStyle = g; ctx.fill();
+    roundRect(ctx, x, y, w, hh, 6); ctx.strokeStyle = hsl(h, 14, 42, 0.5); ctx.lineWidth = 1; ctx.stroke();
+  });
+}
+
+// ---- HUD ----
+function updateHUD() {
+  document.getElementById("cur-id").textContent = idOf(AA, B);
+  document.getElementById("cur-aa").textContent = AA;
+  document.getElementById("cur-b").textContent = B;
+  const next = MOVES[`${AA}_${B}`];
+  document.getElementById("cur-next").textContent =
+    "↑ 전진: " + (next ? `${idOf(next, B)}` : "— (지정 없음)");
+  document.getElementById("btn-up").disabled = !next;
+  drawMinimap();
+}
+
+// ---- 입력 처리 ----
+function rotate(delta) {
+  if (busy) return;
+  // ← (delta +1): B 1늘림, 4→1 / → (delta -1): B 1줄임, 1→4
+  B = ((B - 1 + delta + 4) % 4) + 1;
+  render(); // 회전은 즉시 전환
+}
+
+function forward() {
+  if (busy) return;
+  const next = MOVES[`${AA}_${B}`];
+  if (!next) { toast("이동할 수 없습니다 (다음 스팟 없음)"); return; }
+  busy = true;
+  fade.style.opacity = "1";            // 0.1s 암전
+  setTimeout(() => {
+    AA = next;                         // B 유지
+    visited.add(AA);                   // 미니맵: 탐색 기록
+    render();
+    fade.style.opacity = "0";          // 0.1s 페이드인
+    setTimeout(() => { busy = false; }, 100);
+  }, 100);
+}
+
+let toastTimer;
+function toast(msg) {
+  const t = document.getElementById("toast");
+  t.textContent = msg; t.classList.add("show");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove("show"), 1400);
+}
+
+addEventListener("keydown", (e) => {
+  if (e.key === "ArrowLeft") { rotate(+1); e.preventDefault(); }
+  else if (e.key === "ArrowRight") { rotate(-1); e.preventDefault(); }
+  else if (e.key === "ArrowUp") { forward(); e.preventDefault(); }
+  else if (e.key === "ArrowDown") { /* 기능 없음 */ e.preventDefault(); }
+});
+document.getElementById("btn-left").onclick = () => rotate(+1);
+document.getElementById("btn-right").onclick = () => rotate(-1);
+document.getElementById("btn-up").onclick = forward;
+document.getElementById("btn-down").onclick = () => toast("↓ 기능 없음");
+
+// 시작
+fitCanvas();
+</script>
+</body>
+</html>
