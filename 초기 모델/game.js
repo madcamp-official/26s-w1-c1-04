@@ -107,7 +107,7 @@ const Game = (() => {
 
     // 최종 탈출문: 다른 문을 모두 연 뒤에만 열 수 있다
     if (door.requiresAll && !allDoorsOpenedExceptFinal()) {
-      return { ok: false, locked: true, reason: "먼저 모든 방의 잠금을 해제하세요." };
+      return { ok: false, locked: true, reason: "아직 모든 증거가 하나로 연결되지 않았습니다." };
     }
 
     const code = String(rawCode == null ? "" : rawCode).trim();

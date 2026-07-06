@@ -53,7 +53,7 @@ let pendingSpawn = null;
 let movementFrame = null;
 let lastMovementTime = 0;
 const pressedKeys = new Set();
-const CALCULATOR_ROOM = R2;
+const CALCULATOR_ROOM = "__disabled__";
 const CALC_PUZZLE = {
   numbers: [1, 1, 5, 8],
   target: 10,
@@ -66,11 +66,11 @@ const FIRST_FLOOR = {
   rightRoom: R1,
   lowerRoom: R3,
   stairTarget: R6,
-  topLabel: { number: "105", nameLines: ["Immersion", "Classroom"] },
-  rightLabel: { number: "104", nameLines: ["Pantry"] },
-  lowerLabel: { number: "107", nameLines: ["Open Space"] },
-  corridorLabel: "1F Corridor",
-  stairLabel: "STAIR",
+  topLabel: { number: "회의실", nameLines: [] },
+  rightLabel: { number: "탕비실", nameLines: [] },
+  lowerLabel: { number: "Git", nameLines: ["Room"] },
+  corridorLabel: "열린 공간",
+  stairLabel: "보안실",
   supportPrefix: "10",
   showExit: true,
 };
@@ -81,11 +81,11 @@ const SECOND_FLOOR = {
   rightRoom: R7,
   lowerRoom: R9,
   stairTarget: R0,
-  topLabel: { number: "205", nameLines: [] },
-  rightLabel: { number: "204", nameLines: [] },
-  lowerLabel: { number: "207", nameLines: [] },
-  corridorLabel: "2F Corridor",
-  stairLabel: "STAIR",
+  topLabel: { number: "강연실", nameLines: [] },
+  rightLabel: { number: "서버실", nameLines: [] },
+  lowerLabel: { number: "기록", nameLines: ["보관실"] },
+  corridorLabel: "보안실",
+  stairLabel: "열린공간",
   supportPrefix: "20",
   showExit: false,
 };
@@ -112,11 +112,11 @@ const MAP_CONFIGS = {
       { x: 409, y: 391, w: 47, h: 135 },
     ],
     zones: [
-      { roomId: R2, label: "105 Immersion Classroom", x: 450, y: 174, radius: 26 },
-      { roomId: R1, label: "104 Pantry", x: 740, y: 254, radius: 34 },
-      { roomId: R3, label: "107 Open Space", x: 409, y: 498, radius: 48 },
-      { roomId: R6, label: "Stairs", x: 224, y: 285, radius: 38 },
-      { roomId: R5, label: "Exit", x: 786, y: 285, radius: 34 },
+      { roomId: R2, label: "회의실", x: 450, y: 174, radius: 26 },
+      { roomId: R1, label: "탕비실", x: 740, y: 254, radius: 34 },
+      { roomId: R3, label: "Git Room", x: 409, y: 498, radius: 48 },
+      { roomId: R6, label: "보안실", x: 224, y: 285, radius: 38 },
+      { roomId: R5, label: "옥상", x: 786, y: 285, radius: 34 },
     ],
   },
   [R6]: {
@@ -129,10 +129,10 @@ const MAP_CONFIGS = {
       { x: 409, y: 391, w: 47, h: 135 },
     ],
     zones: [
-      { roomId: R8, label: "205", x: 450, y: 174, radius: 26 },
-      { roomId: R7, label: "204", x: 740, y: 254, radius: 34 },
-      { roomId: R9, label: "207", x: 409, y: 498, radius: 48 },
-      { roomId: R0, label: "Stairs", x: 224, y: 285, radius: 38 },
+      { roomId: R8, label: "강연실", x: 450, y: 174, radius: 26 },
+      { roomId: R7, label: "서버실", x: 740, y: 254, radius: 34 },
+      { roomId: R9, label: "기록보관실", x: 409, y: 498, radius: 48 },
+      { roomId: R0, label: "열린 공간", x: 224, y: 285, radius: 38 },
     ],
   },
 };
@@ -410,8 +410,8 @@ function renderFloorMap(activeRoomId) {
   return `
     <section class="floor-map" aria-label="복도 평면도">
       <svg class="floor-plan" viewBox="0 0 920 620" role="img" aria-labelledby="map-title map-desc">
-        <title id="map-title">KRAFTON SoC E3-5 1층 복도 구조</title>
-        <desc id="map-desc">직각 벽 구조로 정리한 2D top view 지도. 104호 Pantry, 105호 Immersion Classroom, 107호 Open Space, Exit를 누를 수 있다.</desc>
+        <title id="map-title">KRAFTON SoC E3-5 사건 현장 지도</title>
+        <desc id="map-desc">직각 벽 구조로 정리한 2D top view 지도. 각 방은 사건을 재해석하는 증거를 보관한다.</desc>
 
         <g class="map-target" data-room="${floor.corridor}" role="button" tabindex="0" aria-label="${floor.corridorLabel}">
           <path
@@ -448,7 +448,7 @@ function renderFloorMap(activeRoomId) {
           floor.showExit
             ? `<g class="map-target" data-room="${R5}" role="button" tabindex="0" aria-label="Exit 최종 탈출문 열기">
                 <rect class="exit-shape ${roomClass(R5)}" x="800" y="250" width="82" height="70" />
-                <text class="exit-label" x="841" y="284">EXIT</text>
+                <text class="exit-label" x="841" y="284">옥상</text>
               </g>`
             : ""
         }
@@ -479,7 +479,7 @@ function renderFloorMap(activeRoomId) {
         <div class="map-status"><span>${floor.rightLabel.number}</span><strong>${roomState(floor.rightRoom)}</strong></div>
         <div class="map-status"><span>${floor.topLabel.number}</span><strong>${roomState(floor.topRoom)}</strong></div>
         <div class="map-status"><span>${floor.lowerLabel.number}</span><strong>${roomState(floor.lowerRoom)}</strong></div>
-        <div class="map-status"><span>${floor.showExit ? "Exit" : "Stairs"}</span><strong>${roomState(floor.showExit ? R5 : floor.stairTarget)}</strong></div>
+        <div class="map-status"><span>${floor.showExit ? "옥상" : "열린 공간"}</span><strong>${roomState(floor.showExit ? R5 : floor.stairTarget)}</strong></div>
       </div>
     </section>
   `;
@@ -571,8 +571,9 @@ function onMapRoomClick(targetRoomId) {
 function renderEscape(room) {
   el.objects.innerHTML = `
     <div class="escape">
-      <h2 class="escape-title">ESCAPE SUCCESS!</h2>
+      <h2 class="escape-title">03:14</h2>
       <p class="escape-desc">${room.description}</p>
+      <p class="escape-desc">누군가가 부른 흔적은 없다. 모든 경고와 모든 기록은 같은 방향으로 접힌다.</p>
       <button id="restart-btn" class="btn-submit">다시 도전하기</button>
     </div>
   `;
@@ -597,7 +598,7 @@ function onDoorClick(targetRoomId) {
   }
   // 최종 탈출문인데 아직 조건 미충족
   if (door.requiresAll && !Game.allDoorsOpenedExceptFinal()) {
-    toast("먼저 모든 방의 잠금을 해제하세요.", "error");
+    toast("아직 모든 증거가 하나로 연결되지 않았습니다.", "error");
     return;
   }
   // 도어락 모달 열기
@@ -658,7 +659,7 @@ function submitLock() {
   if (res.ok) {
     closeLock();
     toast(
-      res.master ? "마스터코드 · 문이 열렸습니다!" : "잠금 해제!",
+      res.master ? "마스터코드 · 기록을 건너뛰었습니다." : "새 사실을 확인했습니다.",
       "success"
     );
     pendingSpawn = getTransitionSpawn(fromRoomId, target);
