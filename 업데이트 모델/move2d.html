@@ -193,6 +193,19 @@
   .full h1 { font-size:2rem; margin:10px 0 16px; letter-spacing:-.02em; }
   .full p { color:#c4d0dd; line-height:1.85; font-size:.95rem; }
   .full .keys { color:var(--muted); font-size:.8rem; margin:20px 0 24px; line-height:2; }
+  .profile-form { display:grid; gap:12px; margin:18px auto 20px; max-width:340px; }
+  .profile-form input { width:100%; border:1px solid var(--line); border-radius:9px; background:#0a0e14;
+    color:var(--ink); padding:13px 14px; font-size:1rem; text-align:center; font-family:var(--sans); }
+  .profile-form input:focus { outline:none; border-color:rgba(214,172,99,.55); box-shadow:0 0 0 3px rgba(214,172,99,.12); }
+  .leaderboard { margin:18px auto 0; max-width:430px; text-align:left; border-top:1px solid var(--line); padding-top:16px; }
+  .leaderboard h2 { margin:0 0 9px; font-size:.88rem; color:var(--muted); letter-spacing:.12em; text-transform:uppercase; }
+  .leaderboard ol { list-style:none; padding:0; margin:0; display:grid; gap:7px; }
+  .leaderboard li { display:grid; grid-template-columns:32px 1fr auto; gap:10px; align-items:center;
+    padding:8px 10px; border:1px solid var(--line); border-radius:8px; background:rgba(255,255,255,.03); font-size:.86rem; }
+  .leaderboard .rank { font-family:var(--mono); color:var(--warm); }
+  .leaderboard .name { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .leaderboard .time { font-family:var(--mono); color:var(--accent); }
+  .leaderboard .empty { color:var(--muted); font-size:.84rem; text-align:center; padding:10px 0; }
   #win { display:none; }
   #win .stat { font-family:var(--mono); color:var(--warm); }
 
@@ -247,8 +260,25 @@
     <div id="jlist"></div>
   </div>
 
+  <!-- Profile / leaderboard -->
+  <div id="profile" class="full">
+    <div class="panel">
+      <div class="eyebrow">KRAFTON · 몰입캠프 마지막 날 · 03:14 AM</div>
+      <h1>플레이어 기록</h1>
+      <p>시작하기 전에 닉네임을 입력하세요.<br>클리어 시간은 서버에 저장되고, 시작 화면 리더보드에 반영됩니다.</p>
+      <div class="profile-form">
+        <input id="nicknameInput" maxlength="12" autocomplete="off" placeholder="닉네임 입력" />
+        <button class="btn primary" id="profileStartBtn" style="font-size:1rem;padding:12px 30px">기록 이름 정하기 →</button>
+      </div>
+      <div class="leaderboard">
+        <h2>Leaderboard</h2>
+        <div id="leaderboardList" class="empty">기록을 불러오는 중...</div>
+      </div>
+    </div>
+  </div>
+
   <!-- Intro -->
-  <div id="intro" class="full">
+  <div id="intro" class="full" style="display:none">
     <div class="panel">
       <div class="eyebrow">KRAFTON · 몰입캠프 마지막 날 · 03:14 AM</div>
       <h1>03:14</h1>
@@ -388,6 +418,7 @@ const gameState = {
   hints:0,
   started:false,
   startTime:0,
+  nickname:"",
   visited:new Set(),
   intro:true,
 };
@@ -1331,16 +1362,62 @@ document.getElementById("mem-continue").onclick=closeMemory;
    승리 / 시작 / 저장
    ========================================================================= */
 function fmtTime(ms){ const s=Math.floor(ms/1000); return Math.floor(s/60)+"분 "+(s%60)+"초"; }
+function escapeHTML(s){ return String(s).replace(/[&<>"']/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
+const API_BASE = location.protocol==="file:" ? "http://localhost:3000" : "";
+function renderLeaderboard(scores, targetId="leaderboardList"){
+  const box=document.getElementById(targetId);
+  if(!box) return;
+  if(!scores.length){ box.className="empty"; box.textContent="아직 기록이 없습니다."; return; }
+  box.className="";
+  box.innerHTML=`<ol>${scores.map((s,i)=>`<li><span class="rank">#${i+1}</span><span class="name">${escapeHTML(s.nickname)}</span><span class="time">${fmtTime(s.clearTimeMs)}</span></li>`).join("")}</ol>`;
+}
+async function loadLeaderboard(targetId="leaderboardList"){
+  try{
+    const res=await fetch(`${API_BASE}/api/leaderboard`);
+    if(!res.ok) throw new Error("leaderboard");
+    const scores=await res.json();
+    renderLeaderboard(scores, targetId);
+    return scores;
+  }catch(e){
+    const box=document.getElementById(targetId);
+    if(box){ box.className="empty"; box.textContent="서버 주소(http://localhost:3000/move2d.html)로 접속하면 리더보드를 볼 수 있습니다."; }
+    return [];
+  }
+}
+async function submitScore(clearTimeMs){
+  try{
+    const res=await fetch(`${API_BASE}/api/scores`,{
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({ nickname:gameState.nickname, clearTimeMs, hints:gameState.hints })
+    });
+    if(!res.ok) throw new Error("score");
+    return { ok:true };
+  }catch(e){
+    return { ok:false, error:e };
+  }
+}
 function winGame(){
   sOk();
-  const stat=`경과 ${fmtTime(Date.now()-gameState.startTime)} · 사용한 힌트 ${gameState.hints}개`;
+  const clearTimeMs=Date.now()-gameState.startTime;
+  const stat=`${gameState.nickname} · 경과 ${fmtTime(clearTimeMs)} · 사용한 힌트 ${gameState.hints}개`;
   const T=document.getElementById("win-title"), B=document.getElementById("win-body"),
         K=document.getElementById("win-keys"), RB=document.getElementById("restartBtn");
+  submitScore(clearTimeMs).then(async result=>{
+    const status=document.getElementById("score-status");
+    if(result.ok){
+      if(status) status.textContent="리더보드에 기록을 저장했습니다.";
+      await loadLeaderboard("win-leaderboard");
+    } else if(status){
+      status.textContent="기록 저장에 실패했습니다. http://localhost:3000/move2d.html 로 접속했는지 확인하세요.";
+    }
+  });
   document.getElementById("win-eyebrow").textContent="03:14 · 옥상";
   T.textContent="옥상에는 아무도 없다";
   B.innerHTML=`<p>노트북 한 대만 열린 채 조용히 빛나고 있다.<br>화면엔 오늘 날짜의 마지막 Git commit, 그리고 열려 있는 메모장.</p>
     <p style="color:#cbc3b6">메모: <i>"나는 계속 잊게 된다. 그래서 이번에는 건물 전체를 기억장치로 만들었다."</i></p>
     <p style="border-left:3px solid var(--red);padding-left:12px;color:#e9b6b6">그리고 마지막 줄:<br><b style="font-size:1.15rem">난간에 올라가지 마.</b></p>
+    <div class="leaderboard" style="margin-top:18px"><h2>Leaderboard</h2><div id="score-status" class="empty">기록 저장 중...</div><div id="win-leaderboard" class="empty">리더보드를 불러오는 중...</div></div>
     <p style="text-align:center;margin-top:22px"><button class="btn" id="revealBtn">…계속 읽는다</button></p>`;
   K.textContent=""; RB.style.display="none";
   document.getElementById("win").style.display="flex";
@@ -1420,6 +1497,18 @@ function endIntro(){
   addJournal("belief","복도에서","벽에 붙은 쪽지 하나 — '옥상으로 와.' 나를 여기 가둔 사람이 있는 걸까. 흔적을 따라가 보자.");
   toast("복도로 나왔다. 건물은… 텅 비어 있다.","");
 }
+function showStoryIntro(){
+  const input=document.getElementById("nicknameInput");
+  const nickname=(input.value||"").trim().replace(/\s+/g," ").slice(0,12);
+  if(!nickname){ toast("닉네임을 입력하세요.","err"); input.focus(); return; }
+  gameState.nickname=nickname;
+  document.getElementById("profile").style.display="none";
+  document.getElementById("intro").style.display="flex";
+}
+document.getElementById("profileStartBtn").onclick=showStoryIntro;
+document.getElementById("nicknameInput").addEventListener("keydown",e=>{
+  if(e.key==="Enter") showStoryIntro();
+});
 document.getElementById("startBtn").onclick=()=>{
   gameState.started=true; gameState.waking=true; gameState.startTime=Date.now();
   document.getElementById("intro").style.display="none";
@@ -1452,6 +1541,7 @@ function playWake(){
 }
 document.getElementById("restartBtn").onclick=()=>location.reload();
 
+loadLeaderboard();
 fit(); loop();
 </script>
 </body>
