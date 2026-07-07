@@ -6,6 +6,7 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 const SCORE_FILE = path.join(__dirname, "scores.json");
 const MAX_LEADERBOARD = 10;
+const ADMIN_CODE = process.env.ADMIN_CODE || "omokterry";
 
 app.use(express.json({ limit: "10kb" }));
 app.use((req, res, next) => {
@@ -15,7 +16,7 @@ app.use((req, res, next) => {
   if (req.method === "OPTIONS") return res.sendStatus(204);
   next();
 });
-app.get("/", (req, res) => res.redirect("/move2d.html"));
+app.get("/", (req, res) => res.redirect("/move2d_update.html"));
 app.use(express.static(__dirname));
 
 async function readScores() {
@@ -85,6 +86,20 @@ app.post("/api/scores", async (req, res, next) => {
     await writeScores(scores);
 
     res.status(201).json(publicScore(entry));
+  } catch (err) {
+    next(err);
+  }
+});
+
+app.post("/api/leaderboard/reset", async (req, res, next) => {
+  try {
+    const adminCode = cleanNickname(req.body.adminCode || req.body.nickname);
+    if (adminCode !== ADMIN_CODE) {
+      return res.status(403).json({ error: "관리자 권한이 필요합니다." });
+    }
+
+    await writeScores([]);
+    res.json({ ok: true });
   } catch (err) {
     next(err);
   }

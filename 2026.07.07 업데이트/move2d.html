@@ -207,6 +207,10 @@
   .leaderboard .name { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
   .leaderboard .time { font-family:var(--mono); color:var(--accent); }
   .leaderboard .empty { color:var(--muted); font-size:.84rem; text-align:center; padding:10px 0; }
+  .admin-panel { display:none; max-width:430px; margin:12px auto 0; padding:12px; border:1px dashed rgba(214,172,99,.45);
+    border-radius:9px; background:rgba(214,172,99,.06); color:var(--warm); font-size:.84rem; line-height:1.6; }
+  .admin-panel.show { display:block; }
+  .admin-panel .btn { margin-top:8px; width:100%; }
   #win { display:none; }
   #win .stat { font-family:var(--mono); color:var(--warm); }
 
@@ -277,6 +281,11 @@
       <div class="profile-form">
         <input id="nicknameInput" maxlength="12" autocomplete="off" placeholder="닉네임 입력" />
         <button class="btn primary" id="profileStartBtn" style="font-size:1rem;padding:12px 30px">기록 이름 정하기 →</button>
+      </div>
+      <div id="adminPanel" class="admin-panel">
+        관리자 모드가 활성화됩니다. 모든 문과 퍼즐 조건이 해금되며, 관리자 플레이 기록은 리더보드에 저장되지 않습니다.
+        <button class="btn" id="resetLeaderboardBtn" type="button">리더보드 초기화</button>
+        <div id="adminResetStatus" class="empty"></div>
       </div>
       <div class="leaderboard">
         <h2>Leaderboard</h2>
@@ -427,6 +436,7 @@ const gameState = {
   started:false,
   startTime:0,
   nickname:"",
+  admin:false,
   visited:new Set(),
   recSources:new Set(),     // 기억 복원 발동 소스(중복 방지) — size = 복원 횟수 n (총 5)
   intro:true,
@@ -1644,6 +1654,7 @@ async function loadLeaderboard(targetId="leaderboardList"){
   }
 }
 async function submitScore(clearTimeMs){
+  if(gameState.admin) return { ok:true, skipped:true };
   try{
     const res=await fetch(`${API_BASE}/api/scores`,{
       method:"POST",
@@ -1655,6 +1666,70 @@ async function submitScore(clearTimeMs){
   }catch(e){
     return { ok:false, error:e };
   }
+}
+async function resetLeaderboard(){
+  const input=document.getElementById("nicknameInput");
+  const btn=document.getElementById("resetLeaderboardBtn");
+  const status=document.getElementById("adminResetStatus");
+  if((input.value||"").trim()!=="omokterry"){
+    if(status) status.textContent="관리자 닉네임을 먼저 입력하세요.";
+    toast("관리자 닉네임을 먼저 입력하세요.","err");
+    return;
+  }
+  try{
+    if(btn) btn.disabled=true;
+    if(status) status.textContent="리더보드를 초기화하는 중...";
+    const res=await fetch(`${API_BASE}/api/leaderboard/reset`,{
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({ adminCode:(input.value||"").trim() })
+    });
+    if(!res.ok){
+      let msg="reset";
+      try{ const data=await res.json(); if(data.error) msg=data.error; }catch(e){}
+      throw new Error(msg+" (HTTP "+res.status+")");
+    }
+    renderLeaderboard([]);
+    await loadLeaderboard();
+    if(status) status.textContent="리더보드를 초기화했습니다.";
+    toast("리더보드를 초기화했습니다.","ok");
+  }catch(e){
+    if(status) status.textContent="초기화 실패: "+(e.message||"서버 연결 오류");
+    toast("리더보드 초기화에 실패했습니다. 서버를 재시작했는지 확인하세요.","err");
+  }finally{
+    if(btn) btn.disabled=false;
+  }
+}
+function setFragDirect(k,val){
+  gameState.fragments[k]=val;
+  const e=document.getElementById("f-"+({a:"a",b:"b",g:"g"}[k]));
+  if(e){ e.classList.add("on"); e.querySelector("b").textContent=val; }
+}
+function activateAdminMode(){
+  gameState.hasFlashlight=true;
+  gameState.flashlight=true;
+  gameState.flags.evpower=true;
+  gameState.flags.cheryl=true;
+  [
+    "i_board","hanoi","basket","jugs","knights","mirror","ninedots","matchstick","river","liar",
+    "bridge","guards","balance","cheryl","gates","door_104","door_101","door_기자재실","door_108",
+    "door_서버실","door_교수연구실","door_세미나실"
+  ].forEach(k=>gameState.flags[k]=true);
+  [FLOOR1,FLOOR2].forEach(fl=>fl.DOORS.forEach(d=>{ d.open=true; }));
+  setFragDirect("a","03"); setFragDirect("b","14"); setFragDirect("g","15");
+  gameState.inventory=[
+    {id:"flashlight",name:"손전등",icon:"🔦"},
+    {id:"k104",name:"104 키카드",icon:"card"},
+    {id:"k101",name:"101 열쇠",icon:"key"},
+    {id:"brass",name:"황동 열쇠",icon:"key"},
+    {id:"k108",name:"108 열쇠",icon:"key"},
+    {id:"klab",name:"교수연구실 열쇠",icon:"key"},
+    {id:"ksrv",name:"서버실 열쇠",icon:"key"},
+    {id:"kboss",name:"세미나실 열쇠",icon:"key"}
+  ];
+  renderInv();
+  document.getElementById("flash-ind").classList.add("on");
+  addJournal("admin","관리자 모드","모든 문과 퍼즐 조건이 해금되었습니다. 관리자 플레이 기록은 리더보드에 저장되지 않습니다.");
 }
 function winGame(){
   sOk();
@@ -1668,7 +1743,7 @@ function winGame(){
     if(!status) return;
     if(!scoreResult){ status.textContent="기록 저장 중..."; return; }
     if(scoreResult.ok){
-      if(status) status.textContent="리더보드에 기록을 저장했습니다.";
+      if(status) status.textContent=scoreResult.skipped ? "관리자 모드 기록은 저장하지 않습니다." : "리더보드에 기록을 저장했습니다.";
       await loadLeaderboard("win-leaderboard");
     } else if(status){
       status.textContent="기록 저장에 실패했습니다. 서버 주소로 접속했는지 확인하세요.";
@@ -1827,13 +1902,21 @@ function showStoryIntro(){
   const nickname=(input.value||"").trim().replace(/\s+/g," ").slice(0,12);
   if(!nickname){ toast("닉네임을 입력하세요.","err"); input.focus(); return; }
   gameState.nickname=nickname;
+  gameState.admin=nickname==="omokterry";
   document.getElementById("profile").style.display="none";
   document.getElementById("intro").style.display="flex";
+}
+function updateAdminPanel(){
+  const input=document.getElementById("nicknameInput");
+  const panel=document.getElementById("adminPanel");
+  if(panel) panel.classList.toggle("show",(input.value||"").trim()==="omokterry");
 }
 document.getElementById("profileStartBtn").onclick=showStoryIntro;
 document.getElementById("nicknameInput").addEventListener("keydown",e=>{
   if(e.key==="Enter") showStoryIntro();
 });
+document.getElementById("nicknameInput").addEventListener("input",updateAdminPanel);
+document.getElementById("resetLeaderboardBtn").onclick=resetLeaderboard;
 document.getElementById("startBtn").onclick=()=>{
   gameState.started=true; gameState.waking=true; gameState.startTime=Date.now();
   document.getElementById("intro").style.display="none";
@@ -1844,6 +1927,7 @@ document.getElementById("startBtn").onclick=()=>{
   document.getElementById("frags").style.display="none";
   document.getElementById("goal").innerHTML="어둡다. 아무것도 보이지 않는다 — 손전등을 찾아야 한다.";
   ["info","legend"].forEach(id=>{ const e=document.getElementById(id); if(e){ e.style.transition="opacity 1.4s"; e.style.opacity="0"; } });
+  if(gameState.admin) activateAdminMode();
   renderJournal();
   startAudio();
   playWake();
