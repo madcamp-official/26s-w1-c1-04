@@ -389,13 +389,13 @@ const FLOOR1 = buildFloor({ name:"1층",
     { id:"i_cal",     room:"아이디어홀", x:634, y:588,  icon:"📅", label:"탁상 달력",     puzzle:"flavor", flavor:"탁상 달력. 오늘 칸에 동그라미 — 그런데 같은 칸에 몇 번이고 겹쳐 그은 자국이 있다." },
     { id:"i_bag",     room:"아이디어홀", x:528, y:600,  icon:"🛋️", label:"빈백",         puzzle:"flavor", flavor:"내가 잠들어 있던 빈백. 아직 온기가 조금 남아 있다." },
     { id:"mirror",    room:"화장실",     x:560, y:905,  icon:"🪞", label:"세면대 거울",   puzzle:"mirror" },
-    { id:"basket",    room:"105",        x:560, y:700,  icon:"🔌", label:"벽에 붙은 표",   puzzle:"basket" },
-    { id:"jugs",      room:"기자재실",   x:670, y:1030, icon:"💧", label:"넉 장의 카드",   puzzle:"jugs" },
-    { id:"knights",   room:"카페",       x:1395,y:970,  icon:"🗿", label:"기사와 건달",   puzzle:"knights" },
-    { id:"ninedots",  room:"108",        x:1150,y:1025, icon:"🟦", label:"라이트 패널",   puzzle:"ninedots" },
-    { id:"matchstick",room:"104",        x:560, y:250,  icon:"🪵", label:"성냥개비 등식", puzzle:"matchstick" },
-    { id:"river",     room:"103",        x:935, y:250,  icon:"⛵", label:"강 건너기 모형",puzzle:"river" },
-    { id:"liar",      room:"101",        x:935, y:665,  icon:"🕵️", label:"용의자 심문",   puzzle:"liar" },
+    { id:"basket",    room:"105",        x:560, y:700,  icon:"🔌", label:"세 개의 원",   puzzle:"basket" },
+    { id:"jugs",      room:"기자재실",   x:670, y:1030, icon:"💧", label:"기자재실 카드 네 장",   puzzle:"jugs" },
+    { id:"knights",   room:"카페",       x:1395,y:970,  icon:"🗿", label:"남겨진 냅킨",   puzzle:"knights" },
+    { id:"ninedots",  room:"108",        x:1150,y:1025, icon:"🟦", label:"벽의 흠집",   puzzle:"ninedots" },
+    { id:"matchstick",room:"104",        x:560, y:250,  icon:"🪵", label:"고장난 계수기", puzzle:"matchstick" },
+    { id:"river",     room:"103",        x:935, y:250,  icon:"⛵", label:"서버실 배전반",puzzle:"river" },
+    { id:"liar",      room:"101",        x:935, y:665,  icon:"🕵️", label:"손 신호",   puzzle:"liar" },
     { id:"ev1",       room:"복도",       x:842, y:881,  icon:"🛗", label:"엘리베이터",    puzzle:"elevator" },
     { id:"n102",      room:"102",        x:935, y:460,  icon:"📄", label:"노션 · 오늘 할 일", puzzle:"flavor", flavor:"화면에 노션이 켜져 있다. '오늘 할 일' 목록이 며칠째 글자 하나 안 바뀐 채 똑같다. 완료 체크만, 지웠다 다시 그은 자국이 겹쳐 있다." },
     { id:"n106",      room:"106",        x:560, y:814,  icon:"📄", label:"택배 상자",     puzzle:"flavor", flavor:"빈 택배 상자. 송장에 찍힌 날짜가 오늘 하루에만 여러 번 겹쳐 찍혀 있다." },
@@ -416,10 +416,10 @@ const FLOOR2 = buildFloor({ name:"2층",
   ELEV: rect(1120,468,1185,528), evSpawn:[1080,498],
   EXITS:[ { x:620, y:500, goal:true } ],
   INTERACT:[
-    { id:"bridge",  room:"대회의실",   x:530, y:300, icon:"🌉", label:"다리 건너기", puzzle:"bridge" },
-    { id:"guards",  room:"교수연구실", x:530, y:750, icon:"🚪", label:"두 경비병",   puzzle:"guards" },
-    { id:"balance", room:"서버실",     x:1070,y:300, icon:"⚖️", label:"찢어온 종이 세 장",puzzle:"balance" },
-    { id:"cheryl",  room:"세미나실",   x:990, y:730, icon:"🎂", label:"셰릴의 생일",  puzzle:"cheryl" },
+    { id:"bridge",  room:"대회의실",   x:530, y:300, icon:"🌉", label:"넉 장의 카드", puzzle:"bridge" },
+    { id:"guards",  room:"교수연구실", x:530, y:750, icon:"🚪", label:"액자 속 낱말",   puzzle:"guards" },
+    { id:"balance", room:"서버실",     x:1070,y:300, icon:"⚖️", label:"세 방의 단서",puzzle:"balance" },
+    { id:"cheryl",  room:"세미나실",   x:990, y:730, icon:"🎂", label:"마지막 목격 시각",  puzzle:"cheryl" },
     { id:"ev2",     room:"복도",       x:1152,y:499, icon:"🛗", label:"엘리베이터",   puzzle:"elevator" },
     { id:"nlounge", room:"라운지",     x:800, y:275, icon:"☕", label:"라운지",      puzzle:"flavor", flavor:"교수 휴게실. 커피 머신이 꺼져 있다. 창밖으로 옥상 계단이 보인다." },
   ],
@@ -449,6 +449,7 @@ const gameState = {
 };
 const hasItem = id => gameState.inventory.some(i=>i.id===id);
 function addItem(id,name,icon){ if(!hasItem(id)){ gameState.inventory.push({id,name,icon}); renderInv(); sPick(); } }
+function removeItem(id){ const n=gameState.inventory.length; gameState.inventory=gameState.inventory.filter(i=>i.id!==id); if(gameState.inventory.length!==n) renderInv(); }
 function addJournal(id,title,desc){ if(gameState.journal.some(j=>j.id===id)) return;
   gameState.journal.push({id,title,desc}); renderJournal();
   if(!id.startsWith("mem")) setTimeout(()=>{ toast("증거 수첩 갱신 — "+title+"  (J)","ok"); sPick(); }, 1400); }  // 새 증거가 기록되면 알림
@@ -882,7 +883,7 @@ const sClunk=()=>beep(110,0.2,"square");
 const sPick=()=>beep(880,0.08,"triangle");
 
 /* ---- 앰비언트 오디오 엔진 (오프닝: 심장박동·숨·드론·근접핑·시계·CLICK) ---- */
-const AENG = { ctx:null, master:null, lp:null, drone:[], breath:null, tempo:1050, beating:false, pings:{} };
+const AENG = { ctx:null, master:null, lp:null, drone:[], breath:null, tempo:1050, beating:false, pings:{}, music:null, static:null };
 const PING_HZ = { cabinet:200, i_phone:180, i_clock:300, i_cans:240, i_cal:260, i_board:220, i_bag:160 };
 function startAudio(){ if(AENG.ctx) return; try{
   const C = AENG.ctx = actx = actx || new (window.AudioContext||window.webkitAudioContext)();
@@ -895,7 +896,31 @@ function startAudio(){ if(AENG.ctx) return; try{
   const buf=C.createBuffer(1,C.sampleRate*2,C.sampleRate),d=buf.getChannelData(0); for(let i=0;i<d.length;i++) d[i]=(Math.random()*2-1)*0.5;
   const bs=C.createBufferSource(); bs.buffer=buf; bs.loop=true; const bf=C.createBiquadFilter(); bf.type="bandpass"; bf.frequency.value=500; bf.Q.value=0.7; const bg=C.createGain(); bg.gain.value=0; bs.connect(bf);bf.connect(bg);bg.connect(lp); bs.start(); AENG.breath={g:bg,f:bf};
   Object.keys(PING_HZ).forEach(id=>{ const o=C.createOscillator(),g=C.createGain(),f2=C.createBiquadFilter(); o.frequency.value=PING_HZ[id]; f2.type="lowpass"; f2.frequency.value=600; g.gain.value=0; o.connect(f2);f2.connect(g);g.connect(lp); o.start(); AENG.pings[id]=g; });
+  startAmbientMusic();
   AENG.beating=true; heartLoop(); whisperLoop();
+}catch(e){} }
+function startAmbientMusic(){ try{
+  const C=AENG.ctx; if(!C||AENG.music) return;
+  const bus=C.createGain(); bus.gain.value=0.075; bus.connect(AENG.lp);
+  const low=C.createOscillator(), lowGain=C.createGain(), lowFilter=C.createBiquadFilter();
+  low.type="sine"; low.frequency.value=55; lowFilter.type="lowpass"; lowFilter.frequency.value=180; lowGain.gain.value=0.18;
+  low.connect(lowFilter); lowFilter.connect(lowGain); lowGain.connect(bus); low.start();
+  AENG.music={bus,low,lowGain,lowFilter,timers:[],step:0};
+  ambientPhrase();
+}catch(e){} }
+function ambientPhrase(){ try{
+  if(!AENG.ctx||!AENG.music) return;
+  const C=AENG.ctx, t=C.currentTime;
+  const notes=[220,196,164.81,146.83,164.81,123.47];
+  const idx=AENG.music.step++ % notes.length;
+  const o=C.createOscillator(), g=C.createGain(), f=C.createBiquadFilter();
+  o.type="triangle"; o.frequency.setValueAtTime(notes[idx]*(idx%2?0.995:1.005),t);
+  f.type="lowpass"; f.frequency.value=720; f.Q.value=1.2;
+  g.gain.setValueAtTime(0.0001,t);
+  g.gain.linearRampToValueAtTime(0.045,t+0.08);
+  g.gain.exponentialRampToValueAtTime(0.0001,t+2.8);
+  o.connect(f); f.connect(g); g.connect(AENG.music.bus); o.start(t); o.stop(t+3.0);
+  AENG.music.timers.push(setTimeout(ambientPhrase, 2200+Math.random()*1900));
 }catch(e){} }
 function heartLoop(){ if(!AENG.ctx||!AENG.beating) return; lubdub(); setTimeout(heartLoop, AENG.tempo); }
 function lubdub(){ try{ const C=AENG.ctx,t=C.currentTime; [[52,0,0.30],[44,0.16,0.21]].forEach(([f,dl,amp])=>{ const o=C.createOscillator(),g=C.createGain(),lp=C.createBiquadFilter(); o.frequency.value=f; lp.type="lowpass"; lp.frequency.value=120; o.connect(lp);lp.connect(g);g.connect(AENG.lp); const s=t+dl; g.gain.setValueAtTime(0.0001,s); g.gain.exponentialRampToValueAtTime(amp,s+0.006); g.gain.exponentialRampToValueAtTime(0.0001,s+0.13); o.start(s); o.stop(s+0.15); }); }catch(e){} }
@@ -933,14 +958,26 @@ function whisperLoop(){ if(!AENG.ctx) return;
   setTimeout(whisperLoop, 2600+Math.random()*2800);
 }
 // 컷신 전용 오디오 — 베드를 능동적으로 눌러 정적을 만들고(fragBeat가 예약해 둔 복귀까지 취소), 신원 일치마다 저음 스팅어.
-function memDuck(){ try{ const C=AENG.ctx; if(C&&AENG.master){ const t=C.currentTime; AENG.master.gain.cancelScheduledValues(t); AENG.master.gain.setValueAtTime(AENG.master.gain.value,t); AENG.master.gain.setTargetAtTime(0.05,t,0.12); } }catch(e){} }
+function memDuck(){ try{ const C=AENG.ctx; if(C&&AENG.master){ const t=C.currentTime; AENG.master.gain.cancelScheduledValues(t); AENG.master.gain.setValueAtTime(AENG.master.gain.value,t); AENG.master.gain.setTargetAtTime(0.05,t,0.12); if(AENG.music) AENG.music.bus.gain.setTargetAtTime(0.012,t,0.12); startMemoryStatic(); } }catch(e){} }
 function memStinger(){ try{ const C=AENG.ctx; if(!C) return; const t=C.currentTime; const s=C.createOscillator(),sg=C.createGain(); s.frequency.setValueAtTime(40,t); s.frequency.exponentialRampToValueAtTime(92,t+1.1); s.connect(sg); sg.connect(AENG.lp||AENG.master); sg.gain.setValueAtTime(0.0001,t); sg.gain.linearRampToValueAtTime(0.07,t+0.4); sg.gain.exponentialRampToValueAtTime(0.0001,t+1.5); s.start(t); s.stop(t+1.6); }catch(e){} }
+function startMemoryStatic(){ try{
+  const C=AENG.ctx; if(!C||AENG.static) return;
+  const len=C.sampleRate*2, buf=C.createBuffer(1,len,C.sampleRate), d=buf.getChannelData(0);
+  for(let i=0;i<len;i++) d[i]=(Math.random()*2-1)*(0.65+0.35*Math.sin(i*0.043));
+  const src=C.createBufferSource(), hp=C.createBiquadFilter(), bp=C.createBiquadFilter(), g=C.createGain();
+  src.buffer=buf; src.loop=true; hp.type="highpass"; hp.frequency.value=900; bp.type="bandpass"; bp.frequency.value=3100; bp.Q.value=2.8;
+  g.gain.setValueAtTime(0.0001,C.currentTime); g.gain.linearRampToValueAtTime(0.09,C.currentTime+0.25);
+  src.connect(hp); hp.connect(bp); bp.connect(g); g.connect(AENG.master); src.start();
+  AENG.static={src,g};
+}catch(e){} }
+function stopMemoryStatic(){ try{ if(!AENG.ctx||!AENG.static) return; const t=AENG.ctx.currentTime; AENG.static.g.gain.cancelScheduledValues(t); AENG.static.g.gain.setTargetAtTime(0.0001,t,0.16); setTimeout(()=>{ try{ AENG.static.src.stop(); }catch(e){} AENG.static=null; },500); if(AENG.music) AENG.music.bus.gain.setTargetAtTime(0.075,t,0.5); }catch(e){} }
 function updateAudio(){ if(!AENG.ctx) return; try{ const C=AENG.ctx,t=C.currentTime;
   if(gameState.intro && !gameState.hasFlashlight){ const dc=Math.hypot(player.x-CAB[0],player.y-CAB[1]); AENG.tempo = 640 + clamp(dc/220,0,1)*410; }
   if(!gameState.intro && !memOpen){ const D=dreadState.t;                                // 컷신 중엔 컷신이 tempo·드론을 통제(클로버링 방지)
     if(!gameState.flags.finalLull) AENG.tempo = 1120 - 360*D;                            // 심박이 조금씩 빨라진다
     AENG.drone.forEach((d2,i)=>{ try{ d2.g.gain.setTargetAtTime(d2.base*(0.32+1.15*D),t,0.6); // 죽었던 베드가 dread로 되살아나 부푼다
       if(i===1) d2.o.frequency.setTargetAtTime(d2.f + 0.6 + 1.8*D, t, 0.8); }catch(e){} }); } // 42 vs 42.6+ → 느린 맥놀이
+  if(AENG.music && !memOpen){ const D=dreadState.t; AENG.music.bus.gain.setTargetAtTime(0.055+0.035*D,t,0.9); AENG.music.low.frequency.setTargetAtTime(55-7*D,t,1.2); }
   const br=0.5+0.5*Math.sin(pulse*0.55);
   if(AENG.breath){ AENG.breath.f.frequency.setTargetAtTime(420+230*br,t,0.3); AENG.breath.g.gain.setTargetAtTime((gameState.hasFlashlight?0.010:0.03)*(0.4+0.6*br),t,0.3); }
   const dark = gameState.intro && !gameState.hasFlashlight;
@@ -989,7 +1026,7 @@ function openPuzzle(o){
 function openDoorLock(door){
   const lock=door.lock;
   if(lock.key){
-    if(hasItem(lock.key)){ unlockDoor(door,"🔑 "+lock.ttl+" 잠금 해제!"); }
+    if(hasItem(lock.key)){ removeItem(lock.key); unlockDoor(door,"🔑 "+lock.ttl+" 잠금 해제!"); }
     else { toast("🔒 "+lock.ttl+" — 맞는 열쇠가 없다.","err"); sErr(); }
     return;
   }
@@ -1033,7 +1070,7 @@ PUZZLES.pickup_light = () => {
   const fi=document.getElementById("flash-ind"); if(fi) fi.classList.add("on");
   addItem("flashlight","손전등","torch");
   addJournal("cl_light","손전등","캐비닛 대기등 옆에서 손전등을 찾았다. 방이 처음으로 눈에 들어온다. (F로 켜고 끄기)");
-  const gl=document.getElementById("goal"); if(gl) gl.innerHTML="방 안 단서로 문 코드를 알아내 나가자.";
+  const gl=document.getElementById("goal"); if(gl) gl.innerHTML="위로 올라가야 할 것 같은 느낌이 든다.";
   clickReveal();                       // CLICK → 정적 → 드론 소멸 → 빛의 홍수(오디오)
   toast("켜졌다.","ok");
 };
@@ -1100,7 +1137,8 @@ PUZZLES.hanoi = () => {
     const from=pegs[sel], to=pegs[p], disk=from[from.length-1];
     if(!to.length || to[to.length-1]>disk){ to.push(from.pop()); sel=null; draw(); beep(620,.05);
       if(pegs[2].length===3){ solveWin("🔦 캐비닛 안에서 손전등을 찾았다. F키로 어두운 방을 비춰보자.",()=>{ gameState.flags.hanoi=true; gameState.hasFlashlight=true; addItem("flashlight","손전등","🔦");
-        addJournal("cl_light","손전등","잠긴 캐비닛에서 손전등을 찾았다. 어두워서 안 보이던 것들을 비춰볼 수 있다."); }); }
+        addJournal("cl_light","손전등","잠긴 캐비닛에서 손전등을 찾았다. 어두워서 안 보이던 것들을 비춰볼 수 있다.");
+        const gl=document.getElementById("goal"); if(gl) gl.innerHTML="위로 올라가야 할 것 같은 느낌이 든다."; }); }
     } else { sel=null; draw(); shakeCard(); }
   };
   document.getElementById("hreset").onclick=()=>{ pegs=[[3,2,1],[],[]]; sel=null; draw(); };
@@ -1130,7 +1168,7 @@ PUZZLES.basket = () => {
   document.getElementById('bk-abc').innerHTML='ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('').map(x=>`<button class="btn" data-ltr="${x}" style="padding:8px 0;font-family:var(--mono)">${x}</button>`).join('');
   document.getElementById('bk-abc').onclick=e=>{ const b=e.target.closest('[data-ltr]'); if(!b||typed.length>=6)return; typed+=b.dataset.ltr; beep(520,.04); redraw(); };
   document.getElementById('bk-clr').onclick=()=>{ typed=""; beep(300,.05); redraw(); };
-  document.getElementById('bk-ok').onclick=()=>{ if(typed===TARGET){ solveWin('🧺 원과 숫자가 글자로 풀린다 — basket. 기자재실 황동 열쇠를 얻었다.',()=>{ gameState.flags.basket=true; addItem('brass','황동 열쇠','key'); addJournal('basket1','세 개의 원','원 속 획은 모음, 숫자는 자음의 차례. WE, CHILD, 그리고 basket. 누가 이 표를 나 보라고 붙여 두었다.'); }); } else { wrongPulse(); toast('아직 단어가 맞지 않는다.','err'); typed=""; redraw(); } };
+  document.getElementById('bk-ok').onclick=()=>{ if(typed===TARGET){ solveWin('🧺 원과 숫자가 글자로 풀린다 — basket. 기자재실 황동 열쇠를 얻었다.',()=>{ gameState.flags.basket=true; addItem('brass','황동 열쇠','key'); }); } else { wrongPulse(); toast('아직 단어가 맞지 않는다.','err'); typed=""; redraw(); } };
 };
 
 // [1F·기자재실] 회전·뒤집기 금지 카드(abc.png) → 4자리 7695 → 전원 복구 + 조각 γ
@@ -1148,7 +1186,7 @@ PUZZLES.jugs = () => {
   document.getElementById("ab-pad").onclick=e=>{ const b=e.target.closest("[data-num]"); if(!b)return; if(typed.length<4){ typed+=b.dataset.num; beep(500,.04); draw(); } };
   document.getElementById("ab-del").onclick=()=>{ typed=typed.slice(0,-1); draw(); };
   document.getElementById("ab-ok").onclick=()=>{ if(typed===ANSWER){
-      solveWin('⚡ 넉 장이 맞물린다 — 7695. 백업 전원이 돌아오고 엘리베이터가 깨어난다. 기억 조각 γ 복원.',()=>{ gameState.flags.jugs=true; gameState.flags.evpower=true; setFrag('g','4','γ'); addJournal('cctv1','회전·뒤집기 금지','기자재실 문서들 사이에서 같은 넉 장을 발견했다. 돌리지도 뒤집지도 말라 — 어느 밤에도 똑같이. 맞추면 7695. 무슨 자물쇠였는지는 기억에서 지워졌다.'); }); }
+      solveWin('⚡ 넉 장이 맞물린다 — 7695. 백업 전원이 돌아오고 엘리베이터가 깨어난다. 기억 조각 γ 복원.',()=>{ gameState.flags.jugs=true; gameState.flags.evpower=true; setFrag('g','4','γ'); }); }
     else { typed=""; draw(); wrongPulse(); toast('아직 맞물리지 않는다.','err'); } };
 };
 
@@ -1191,17 +1229,25 @@ PUZZLES.mirror = () => {
   base.fillText("SOS",160,92); base.shadowBlur=0;   // 유리 반대편에서 쓴 'SOS' — 거울에 비춰(좌우 반전) 읽으면 202
   const cv2=document.getElementById("mir-cv"), c2=cv2.getContext("2d");
   c2.fillStyle="#c3ccd2"; c2.fillRect(0,0,320,180);            // 김(안개) — 이 레이어만 닦아 밑의 거울상 숫자를 드러낸다
-  let cleared=0, revealed=false, drawing=false;
-  const wipe=(x,y)=>{ c2.save(); c2.globalCompositeOperation="destination-out"; c2.beginPath(); c2.arc(x,y,18,0,7); c2.fill(); c2.restore();
-    if(++cleared>44 && !revealed){ revealed=true; onReveal(); } };
+  let cleared=0, revealed=false, drawing=false, lastPoint=null;
+  const wipePoint=(x,y)=>{ c2.save(); c2.globalCompositeOperation="destination-out"; c2.beginPath(); c2.arc(x,y,24,0,7); c2.fill(); c2.restore(); };
+  const wipe=(x,y)=>{
+    if(lastPoint){
+      const dx=x-lastPoint[0], dy=y-lastPoint[1], steps=Math.max(1,Math.ceil(Math.hypot(dx,dy)/7));
+      for(let i=1;i<=steps;i++) wipePoint(lastPoint[0]+dx*i/steps,lastPoint[1]+dy*i/steps);
+    } else wipePoint(x,y);
+    lastPoint=[x,y];
+    if(++cleared>24 && !revealed){ revealed=true; onReveal(); }
+  };
   const pos=e=>{ const r=cv2.getBoundingClientRect(); return [(e.clientX-r.left)*320/r.width,(e.clientY-r.top)*180/r.height]; };
-  cv2.onmousedown=e=>{ drawing=true; wipe(...pos(e)); };
-  cv2.onmousemove=e=>{ if(drawing) wipe(...pos(e)); };
-  cv2.onmouseup=()=>drawing=false; cv2.onmouseleave=()=>drawing=false;
+  cv2.onpointerdown=e=>{ drawing=true; lastPoint=null; cv2.setPointerCapture?.(e.pointerId); wipe(...pos(e)); };
+  cv2.onpointermove=e=>{ if(drawing) wipe(...pos(e)); };
+  const stopWipe=()=>{ drawing=false; lastPoint=null; };
+  cv2.onpointerup=stopWipe; cv2.onpointercancel=stopWipe; cv2.onpointerleave=stopWipe;
   function onReveal(){
     c2.clearRect(0,0,320,180);                                 // 남은 김 전부 걷힘 → 밑의 거울상 숫자 드러남
     document.getElementById("mir-hint").innerHTML="유리에 남은 이 자국, 유리 <b>반대편</b>에서 쓴 것 같다. …거울에 비친 대로 읽어야 하나.";
-    knock(); if(typeof whisper==="function") whisper(0);
+    knock(); if(typeof whisper==="function") whisper(0); memStinger();
     setTimeout(()=>{ c2.save();                                 // 손자국 대신 거울 전체를 가로지르는 핏자국
       c2.globalAlpha=.72; c2.strokeStyle="rgba(150,12,20,.78)"; c2.lineWidth=14; c2.lineCap="round";
       c2.beginPath(); c2.moveTo(38,58); c2.bezierCurveTo(105,30,188,92,284,54); c2.stroke();
@@ -1211,7 +1257,7 @@ PUZZLES.mirror = () => {
   }
   document.getElementById("mok").onclick=()=>{ if(!revealed){ wrongPulse(); toast("먼저 유리를 닦아야 한다.","err"); return; }
     gameState.flags.mirror=true;
-    addJournal("code105","거울 속의 나","김 서린 유리에 남은 SOS. 그런데 그 자국은 유리 반대편에서 쓴 것 같다 — 거울에 비친 대로(좌우 반전) 읽으면 202일까.");
+    addJournal("code105","거울 속의 나","김 서린 유리에 남은 SOS. 그런데 그 자국은 유리 반대편에서 쓴 것 같다.");
     closeModal(); toast("거울의 숫자를 수첩에 적었다. (105호 잠금은 그 '거울상')","ok"); sPick(); };
 };
 
@@ -1250,7 +1296,7 @@ PUZZLES.matchstick = () => {
   const draw=()=>document.getElementById('mst-disp').textContent=typed.padEnd(4,'·'); draw();
   document.getElementById('mst-abc').onclick=e=>{const b=e.target.closest('[data-ltr]');if(!b)return;if(typed.length<4){typed+=b.dataset.ltr;beep(500,.04);draw();}};
   document.getElementById('mst-del').onclick=()=>{typed=typed.slice(0,-1);draw();};
-  document.getElementById('mst-ok').onclick=()=>{ if(typed===ANSWER){ solveWin('🧩 잠긴 서랍이 열렸다 — 기억 조각 α 복원.',()=>{ gameState.flags.matchstick=true; setFrag('a','3','α'); addJournal('git1','커밋 로그','같은 메시지 \'again\' 이 번호도 안 맞게 여러 번 찍혀 있다. 마지막은 오늘 03:14. 계정은 나.'); }); } else { wrongPulse(); toast('아직 참이 아니다.','err'); typed=''; draw(); } };
+  document.getElementById('mst-ok').onclick=()=>{ if(typed===ANSWER){ solveWin('🧩 잠긴 서랍이 열렸다 — 기억 조각 α 복원.',()=>{ gameState.flags.matchstick=true; setFrag('a','3','α'); }); } else { wrongPulse(); toast('아직 참이 아니다.','err'); typed=''; draw(); } };
 };
 
 // [1F·103] 서버실 배전반 (스위치 상태 ON/OFF를 「 」 사이에 그대로 끼워 실단어 → OFFICE) → 101 열쇠  (중_6 원본)
@@ -1298,7 +1344,7 @@ PUZZLES.liar = () => {
     document.getElementById('lok').onclick=()=>{
       if(typed!==ANS){ typed=''; draw(); wrongPulse(); toast(s1?'암호가 맞지 않는다. ★칸의 글자만 왼→오로 뽑았나?':'손가락 수로는 열리지 않는다 — 저 손과 겨뤄보면?','err'); return; }
       if(s1){ beep(760,.08); toast('첫 자물쇠가 풀린다 — 그 순간 옆에서 손 하나가 불쑥 나온다.','ok'); stage=2; setTimeout(render,680); }
-      else { solveWin('🔓 사물함이 열렸다 — 녹음기 두 개. 기억 조각 β 복원.',()=>{ gameState.flags.liar=true; setFrag('b','1','β'); addJournal('voice1','녹음 두 개','하나는 \'옥상으로 와\', 하나는 \'가지 마\'. 재생하면 두 소리 밑에 같은 숨소리가 겹쳐 있다.'); }); }
+      else { solveWin('🔓 사물함이 열렸다 — 녹음기 두 개. 기억 조각 β 복원.',()=>{ gameState.flags.liar=true; setFrag('b','1','β'); }); }
     };
   }
   render();
@@ -1321,7 +1367,7 @@ PUZZLES.bridge = () => {
   const draw=()=>document.getElementById('wdisp').textContent=typed.padEnd(N,'·'); draw();
   document.getElementById('abc').onclick=e=>{const b=e.target.closest('[data-ltr]');if(!b)return;if(typed.length<N){typed+=b.dataset.ltr;beep(500,.04);draw();}};
   document.getElementById('wdel').onclick=()=>{typed=typed.slice(0,-1);draw();};
-  document.getElementById('wok').onclick=()=>{ if(typed===UWORD){ solveWin('Z는 팀(TEAM), U는 — TAME. 교수연구실 열쇠를 얻었다.',()=>{ gameState.flags.bridge=true; addItem('klab','교수연구실 열쇠','key'); addJournal('cards2','넉 장의 카드','같은 넉 장을 Z로 읽으면 TEAM, U로 읽으면 TAME. 무늬만 미세하게 바뀐 채, 매번 같은 자리에 같은 넉 장이 놓여 있었다.'); }); } else { typed=''; draw(); wrongPulse(); toast('단어가 맞지 않는다. U의 경로로 다시 읽어라.','err'); } };
+  document.getElementById('wok').onclick=()=>{ if(typed===UWORD){ solveWin('Z는 팀(TEAM), U는 — TAME. 교수연구실 열쇠를 얻었다.',()=>{ gameState.flags.bridge=true; addItem('klab','교수연구실 열쇠','key'); }); } else { typed=''; draw(); wrongPulse(); toast('단어가 맞지 않는다. U의 경로로 다시 읽어라.','err'); } };
   wireHint();
 };
 
@@ -1352,7 +1398,7 @@ PUZZLES.guards = () => {
   document.getElementById("g-del").onclick=()=>{ typed=typed.slice(0,-1); draw(); };
   document.getElementById("g-ok").onclick=()=>{ if(typed===ANSWER){
       solveWin("🚪 네 낱말이 한 단어로 모인다 — WHEN. 서버실 열쇠를 얻었다. 기억 조각 δ 복원.",()=>{ gameState.flags.guards=true; addItem("ksrv","서버실 열쇠","key");
-        addJournal("voice2","인터폰 녹음","두 통. 서로 반대되는 말. 발신 번호가… 같다."); setFrag("d","1","δ"); }); }
+        setFrag("d","1","δ"); }); }
     else { typed=""; draw(); wrongPulse(); toast("액자와 맞지 않는다.","err"); } };
 };
 
@@ -1371,7 +1417,7 @@ PUZZLES.balance = () => {
   document.getElementById("ad-abc").onclick=e=>{ const b=e.target.closest("[data-ltr]"); if(!b)return; if(typed.length<5){ typed+=b.dataset.ltr; beep(500,.04); draw(); } };
   document.getElementById("ad-del").onclick=()=>{ typed=typed.slice(0,-1); draw(); };
   document.getElementById("ad-ok").onclick=()=>{ if(typed===ANSWER){
-      solveWin("🧩 세 단서가 한 낱말로 맞물린다 — ADOPT. 세미나실 열쇠를 얻었다.",()=>{ gameState.flags.balance=true; addItem("kboss","세미나실 열쇠","key"); addJournal("cctv2","세 방의 단서","D하나=DONE, 5번의 답=PEN, DIRTY의 반대=CLEAN. 자리를 맞추면 — ADOPT. 받아들여라, 적응하라. 누가 밤마다 나에게 그 말을 남겼다."); }); }
+      solveWin("🧩 세 단서가 한 낱말로 맞물린다 — ADOPT. 세미나실 열쇠를 얻었다.",()=>{ gameState.flags.balance=true; addItem("kboss","세미나실 열쇠","key"); }); }
     else { typed=""; draw(); wrongPulse(); toast("아직 맞물리지 않는다.","err"); } };
 };
 
@@ -1379,8 +1425,8 @@ PUZZLES.balance = () => {
 PUZZLES.cheryl = () => {
   // 복도 CCTV엔 '시'만, 계단 CCTV엔 '분'만 남았다. 두 로그의 확신/불확신을 교차해 정확한 시각을 특정.
   const times=[["1시","19"],["1시","20"],["1시","14"],["2시","18"],["2시","22"],["3시","14"],["3시","16"],["3시","17"],["4시","16"],["4시","17"],["4시","20"],["4시","22"]];
-  openModal(`<h2>${ic('cctv',22)} 마지막 목격 시각 · BOSS</h2>
-    <p class="sub">두 대의 CCTV가 시각을 반쪽씩만 남겼다. <b>복도 로그</b>엔 '시', <b>계단 로그</b>엔 '분'만. 세 단서를 순서대로 적용하라.</p>
+  openModal(`<h2>${ic('cctv',22)} 마지막 목격 시각</h2>
+    <p class="sub">두 대의 CCTV가 시각을 반쪽씩만 남겼다. <b>복도 로그</b>엔 '시', <b>계단 로그</b>엔 '분'만. 정답은 아래 선택지 중 하나다. 세 단서를 순서대로 적용하라.</p>
     <div class="scene-txt" style="line-height:1.9">
     ① 복도 로그: "나는 정확한 시각을 몰라. 그리고 계단 로그도 모른다는 걸 안다."<br>
     ② 계단 로그: "처음엔 몰랐지만, 이제 알겠다."<br>
@@ -1415,7 +1461,7 @@ function switchFloor(n){ setFloor(n===1?FLOOR1:FLOOR2); currentFloor=n;
   lastRoom=null; nearObj=null; toast((n===1?"1층":"2층")+"으로 이동",""); sClunk(); }
 function openExit(goal){
   if(!goal){ toast("🔒 이 비상구는 야간 잠금이다.","err"); sErr(); return; }
-  if(!gameState.flags.cheryl){ toast("🔒 옥상 비상구가 잠겨 있다. 세미나실 셰릴 수수께끼(BOSS)를 먼저 풀어라.","err"); sErr(); return; }
+  if(!gameState.flags.cheryl){ toast("🔒 옥상 비상구가 잠겨 있다. 세미나실 마지막 목격 시각을 먼저 풀어라.","err"); sErr(); return; }
   const f=gameState.fragments, SYM={a:'α',b:'β',g:'γ',d:'δ',e:'ε'}, KEYS=['a','b','g','d','e'];
   const miss=KEYS.filter(k=>!f[k]);
   if(miss.length){
@@ -1461,14 +1507,13 @@ const MEMORY_ACTS = [
       { at:2600, fx:"in",     mode:"video", integ:20, audio:"hum",       text:"[CCTV · 03:1_] 계단을 오르는 뒷모습. 얼굴은 뭉개져 읽히지 않는다." },
       { at:5200, fx:"tw",     mode:"video", integ:26, audio:"tick",      text:"[출입기록] 같은 시각 인증 1건." },
       { at:7900, fx:"tw",     mode:"video", integ:26, audio:"stinger",   text:"[얼굴] 인식 불가  [걸음걸이] 일치율 98%." },
-      { at:10700,fx:"redact", mode:"video", integ:26, audio:"duck",      text:"무엇과 맞다는 건지, 도구는 끝내 말하지 않는다." },
+      { at:10700,fx:"redact", mode:"video", integ:26, audio:"duck",      text:"누구와 일치한다는 건지, 도구는 끝내 말하지 않는다." },
     ] },
   { title:"두 번째 섹터 · 겹친 목소리", media:"복원 유틸리티 · 손상 섹터 2 / 5 · 음성", tempo:1000, foot:13500,
     beats:[
       { at:400,  fx:"tw", mode:"boot",      integ:26, audio:"duck+tick", text:"손상 섹터 2 / 5.  음성 트랙 2개 — 정렬 실패." },
       { at:2600, fx:"in", mode:"wave",      integ:34, audio:"voices",    text:"[음성] 재생 실패 — 파형이 둘. 한쪽은 부르고, 한쪽은 말린다." },
       { at:5500, fx:"in", mode:"wavemerge", integ:40, audio:"stinger",   text:"화자 대조 — 동일인. 부르는 소리도, 말리는 소리도." },
-      { at:8400, fx:"tw", mode:"terminal",  integ:44, audio:"tick",      text:"[Git] 03:14 — commit \"again\".  앞뒤 번호가 이어지지 않는다." },
       { at:11200,fx:"in", mode:"wavemerge", integ:44, audio:"duck",      text:"어느 쪽이 먼저였는지 — 파형만으론 알 수 없다." },
     ] },
   { title:"세 번째 섹터 · 되풀이되는 계단", media:"복원 유틸리티 · 손상 섹터 3 / 5 · 영상·중복", tempo:960, foot:13600,
@@ -1491,7 +1536,7 @@ const MEMORY_ACTS = [
     beats:[
       { at:400,  fx:"tw",     mode:"boot",     integ:82,  audio:"duck+tick", text:"마지막 섹터.  이게 복구되면, 남는 파일이 없다." },
       { at:2800, fx:"in",     mode:"video",    integ:90,  audio:"heart",     text:"마지막 프레임 — 난간 앞. 첫 섹터가 못 읽던 얼굴을, 도구가 이제 읽는다." },
-      { at:6000, fx:"in",     mode:"video",    integ:96,  audio:"stinger",   text:"얼굴 대조 100%.   발신 = 수신 · 100%." },
+      { at:6000, fx:"in",     mode:"video",    integ:96,  audio:"stinger",   text:"얼굴 대조. 100%. 발신인 수신인 일치." },
       { at:9400, fx:"tw",     mode:"terminal", integ:100, audio:"hardcut",   text:"기록된 순간 — 03:14:15.  그 다음 프레임은… 없다. 매번, 거기서 끊긴다." },
       { at:12600,fx:"redact", mode:"terminal", integ:100, audio:"duck",      warm:true, text:"왜 거기서 끊기는지 — 그 줄은, 내가 지워 두었다." },
       { at:15400,fx:"tw",     mode:"terminal", integ:100, audio:"roomtone",  text:"복구할 파일이 더 없다.  남은 문은, 옥상 하나." },
@@ -1598,6 +1643,7 @@ function memFlush(){                                                            
 }
 function closeMemory(){ memOpen=false; modalOpen=false; memDone=false; memFxOn=false;
   memTimers.forEach(clearTimeout); memTimers=[]; memIntervals.forEach(clearInterval); memIntervals=[];
+  stopMemoryStatic();
   document.getElementById("memory").style.display="none";
   try{ const C=AENG.ctx; if(C&&AENG.master){ AENG.master.gain.cancelScheduledValues(C.currentTime); AENG.master.gain.setTargetAtTime(0.9,C.currentTime,0.4); } }catch(e){} // 월드 오디오 무조건 복원
 }
@@ -1709,6 +1755,36 @@ function activateAdminMode(){
   document.getElementById("flash-ind").classList.add("on");
   addJournal("admin","관리자 모드","모든 문과 퍼즐 조건이 해금되었습니다. 관리자 플레이 기록은 리더보드에 저장되지 않습니다.");
 }
+function resetDoors(){
+  [FLOOR1,FLOOR2].forEach(fl=>fl.DOORS.forEach(d=>{ d.open=!d.lock; }));
+}
+function resetToFirstPlayable(){
+  const nickname=gameState.nickname, admin=gameState.admin;
+  Object.keys(keys).forEach(k=>keys[k]=false);
+  resetDoors();
+  Object.assign(gameState,{
+    flags:{}, inventory:[], journal:[], fragments:{a:null,b:null,g:null,d:null,e:null},
+    flashlight:false, hasFlashlight:false, hints:0, started:true, startTime:Date.now(),
+    nickname, admin, visited:new Set(), recSources:new Set(), intro:true, waking:false
+  });
+  ["a","b","g","d","e"].forEach(k=>{ const e=document.getElementById("f-"+k); if(e){ e.classList.remove("on"); e.querySelector("b").textContent="·"; } });
+  setFloor(FLOOR1); currentFloor=1; lastRoom=null; nearObj=null; modalOpen=false; memOpen=false; memDone=false; memFxOn=false;
+  stopMemoryStatic(); closeModal();
+  player.x=530; player.y=560; player.facing=Math.PI/2;
+  cam.x=player.x; cam.y=player.y; cam.zoom=cam.baseZoom*1.6; cam.targetZoom=cam.baseZoom*1.6;
+  lightState.t=0; lightState.target=0; dreadState.t=0; shake=0; dreadFlash=0;
+  document.getElementById("profile").style.display="none";
+  document.getElementById("intro").style.display="none";
+  document.getElementById("win").style.display="none";
+  document.getElementById("frags").style.display="none";
+  document.getElementById("journal").classList.remove("open");
+  document.getElementById("flash-ind").classList.remove("on");
+  document.getElementById("goal").innerHTML="위로 올라가야 할 것 같은 느낌이 든다.";
+  ["info","legend"].forEach(id=>{ const e=document.getElementById(id); if(e){ e.style.transition="opacity 1.4s"; e.style.opacity=""; } });
+  renderInv(); renderJournal(); fit(); findNear(); updateHUD();
+  if(admin) activateAdminMode();
+  toast("다시 눈을 떴다. 처음부터, 하지만 이름은 그대로다.","");
+}
 function fallReset(){
   sErr();
   document.getElementById("win-eyebrow").textContent="옥상 · 암전";
@@ -1720,7 +1796,7 @@ function fallReset(){
   const rb=document.getElementById("restartBtn");
   rb.style.display="none";
   document.getElementById("win").style.display="flex";
-  setTimeout(()=>location.reload(), 3600);
+  setTimeout(resetToFirstPlayable, 3600);
 }
 function winGame(){
   sOk();
@@ -1755,10 +1831,10 @@ function winGame(){
   document.getElementById("revealBtn").onclick=()=>{
     sOk();
     T.textContent="…아.";
-    B.innerHTML=`<p>게임 내내 들려온 두 목소리 — <i>"옥상으로 와." "가지 마."</i><br>
+    B.innerHTML=`<p>줄곧 들려오던 목소리. <i>"옥상으로 와." "가지 마."</i><br>
       CCTV도, 출입기록도, 그 목소리도 — 전부 나 혼자였다. 부르는 나와, 말리는 나.</p>
-      <p>아무도 나를 가두지 않았다. <b>03:14:15</b>, 난간 앞에서 나는 매번 그날을 통째로 잊었다.<br>그리고 다시 이 건물에서 깨어났다. 몇 번이나 — 커밋의 <b>'again'</b>은 세다가 만 흔적이다.</p>
-      <p style="color:var(--muted)">지금 나는 그 난간 앞에 서 있다.<br>올라가면, 또 잊는다. 돌아서면 — 처음으로 이 하루를 <b>기억한 채</b> 넘어간다.</p>
+      <p>아무도 나를 가두지 않았다. <b>03:14:15</b>, 난간 앞에서 나는 매번 그날을 통째로 잊었다.<br>그리고 다시 이 건물에서 깨어났다. 몇 번이나.</p>
+      <p style="color:var(--muted)">지금 나는 그 난간 앞에 서 있다.<br>올라가면, 또 잊는다. 돌아서면, 처음으로 이 하루를 <b>기억한 채</b> 넘어갈 것이다.</p>
       <p style="color:#cbc3b6;text-align:center;margin-top:10px">…어느 쪽으로 갈지는, 나만이 안다.</p>
       <div class="leaderboard" style="margin-top:18px"><h2>Leaderboard</h2><div id="score-status" class="empty">기록 저장 중...</div><div id="win-leaderboard" class="empty">리더보드를 불러오는 중...</div></div>`;
     updateWinLeaderboard();
@@ -1772,6 +1848,14 @@ function winGame(){
 const keys={};
 const isSpace = e => e.key===" " || e.key==="Spacebar" || e.code==="Space";
 const isEnter = e => e.key==="Enter";
+function clickDeleteButton(scope){
+  const btn=[...scope.querySelectorAll('button')].find(b=>{
+    const txt=b.textContent.trim();
+    return txt==='⌫' || txt==='←' || txt==='지우기' || b.dataset.k==='clr' || /del|clr/i.test(b.id||"");
+  });
+  if(btn){ btn.click(); return true; }
+  return false;
+}
 function handleModalKey(e,k){
   const card=document.getElementById("card"), kp=document.getElementById("kp");
   if(kp){                                                    // 도어락 키패드: 숫자 입력 · Enter 확인 · Backspace 지움
@@ -1786,27 +1870,28 @@ function handleModalKey(e,k){
     if(/^[a-z]$/.test(k)) jm=DUBEOL[k];                       // 영문자판(두벌식 배열)
     else if(/^[ㄱ-ㅎㅏ-ㅣ]$/.test(e.key)) jm=e.key;           // 한글 IME로 들어온 낱자
     if(jm){ const b=card.querySelector('[data-j="'+jm+'"]'); if(b){ e.preventDefault(); b.click(); } return; }
-    if(k==="backspace"){ const d=[...card.querySelectorAll('button')].find(b=>/지우기|⌫/.test(b.textContent)); if(d){ e.preventDefault(); d.click(); } return; }
+    if(k==="backspace"){ if(clickDeleteButton(card)) e.preventDefault(); return; }
     if(isEnter(e)){ const ok=card.querySelector('.btn.primary:not(:disabled)'); if(ok){ e.preventDefault(); ok.click(); } return; }
     return;
   }
   // 숫자 답 키패드(카드 등): 물리 숫자키 → data-num 버튼 · Backspace/Enter
   if(card.querySelector('[data-num]')){
     if(/^[0-9]$/.test(e.key)){ const b=card.querySelector('[data-num="'+e.key+'"]'); if(b){ e.preventDefault(); b.click(); } return; }
-    if(k==="backspace"){ const d=[...card.querySelectorAll('button')].find(b=>b.textContent.trim()==='⌫'); if(d){ e.preventDefault(); d.click(); } return; }
+    if(k==="backspace"){ if(clickDeleteButton(card)) e.preventDefault(); return; }
     if(isEnter(e)){ const ok=card.querySelector('.btn.primary:not(:disabled)'); if(ok){ e.preventDefault(); ok.click(); } return; }
     return;
   }
   // 영문 답 키패드: 알파벳 물리키 → 해당 글자 버튼 · Backspace → 지우기(⌫)
   if(/^[a-zA-Z]$/.test(e.key)){ const b=card.querySelector('[data-ltr="'+e.key.toUpperCase()+'"]'); if(b){ e.preventDefault(); b.click(); } return; }
-  if(k==="backspace"){ const d=[...card.querySelectorAll('button')].find(b=>b.textContent.trim()==='⌫'); if(d){ e.preventDefault(); d.click(); } return; }
+  if(k==="backspace"){ if(clickDeleteButton(card)) e.preventDefault(); return; }
   // 일반 퍼즐: 숫자 = N번째 선택지 · Enter/Space = 확인/제출
   if(/^[1-9]$/.test(e.key)){ const opts=card.querySelectorAll('.btn[data-i],.btn[data-g],.btn[data-p],.btn[data-d],.socket[data-k]'); const t=opts[+e.key-1]; if(t){ e.preventDefault(); t.click(); } return; }
   if(isEnter(e)||isSpace(e)){ const prim=card.querySelector('[data-k="ok"]:not(:disabled)') || card.querySelector('.btn.primary:not(:disabled)'); if(prim){ e.preventDefault(); prim.click(); } }
 }
 addEventListener("keydown",e=>{
-  if(e.key.startsWith("Arrow")){ keys[e.key]=true; e.preventDefault(); }
   const k=e.key.toLowerCase();
+  if(e.key.startsWith("Arrow")){ keys[e.key]=true; e.preventDefault(); }
+  if(["w","a","s","d"].includes(k) && gameState.started && !modalOpen && !memOpen){ keys[k]=true; e.preventDefault(); }
   if(!gameState.started){                                   // 시작 화면: Enter/Space로 시작
     if(isEnter(e)||isSpace(e)){ const sb=document.getElementById("startBtn"), intro=document.getElementById("intro");
       if(sb && intro && intro.style.display!=="none"){ e.preventDefault(); sb.click(); } }
@@ -1821,7 +1906,7 @@ addEventListener("keydown",e=>{
   if(k==="f"){ toggleFlash(); }
   if(k==="j"){ document.getElementById("journal").classList.toggle("open"); }
 });
-addEventListener("keyup",e=>{ keys[e.key]=false; });
+addEventListener("keyup",e=>{ keys[e.key]=false; keys[e.key.toLowerCase()]=false; });
 
 function handleInteract(){
   if(nearObj.kind==="obj") openPuzzle(nearObj.o);
@@ -1873,7 +1958,7 @@ function loop(){
     const introSec=(Date.now()-gameState.startTime)/1000;
     const groggy = (gameState.intro && introSec<6) ? 0.55 : 1;   // 깨어난 직후 비틀
     let dx=0,dy=0;
-    if(keys.ArrowLeft)dx-=1; if(keys.ArrowRight)dx+=1; if(keys.ArrowUp)dy-=1; if(keys.ArrowDown)dy+=1;
+    if(keys.ArrowLeft||keys.a)dx-=1; if(keys.ArrowRight||keys.d)dx+=1; if(keys.ArrowUp||keys.w)dy-=1; if(keys.ArrowDown||keys.s)dy+=1;
     if(dx||dy){ const L=Math.hypot(dx,dy); dx/=L; dy/=L; move(dx*SPEED*groggy,dy*SPEED*groggy); player.facing=Math.atan2(dy,dx); }
     findNear(); updateHUD();
     const rn=roomAt(player.x,player.y);
@@ -1923,7 +2008,7 @@ document.getElementById("startBtn").onclick=()=>{
   cam.x=player.x; cam.y=player.y; cam.zoom=cam.targetZoom;
   lightState.t=0; lightState.target=0;
   document.getElementById("frags").style.display="none";
-  document.getElementById("goal").innerHTML="어둡다. 아무것도 보이지 않는다 — 손전등을 찾아야 한다.";
+  document.getElementById("goal").innerHTML="위로 올라가야 할 것 같은 느낌이 든다.";
   ["info","legend"].forEach(id=>{ const e=document.getElementById(id); if(e){ e.style.transition="opacity 1.4s"; e.style.opacity="0"; } });
   if(gameState.admin) activateAdminMode();
   renderJournal();
