@@ -41,17 +41,17 @@
 ## 기능 명세서 
 
 # 필수 기능
-[] **Top-down movement** — 방향키/WASD 이동 + 마우스 클릭 상호작용, 새로고침 없는 단일 화면
+[ ] **Top-down movement** — 방향키/WASD 이동 + 마우스 클릭 상호작용, 새로고침 없는 단일 화면
 
-[] **Flashlight-based visibility system** — 어둠 속에서 손전등 반경만 밝게, 탐색의 긴장감
+[ ] **Flashlight-based visibility system** — 어둠 속에서 손전등 반경만 밝게, 탐색의 긴장감
 
-[] **Interaction** — 특정 물체 근처에 가면 퍼즐이나 설명 띄움
+[ ] **Interaction** — 특정 물체 근처에 가면 퍼즐이나 설명 띄움
 
-[] **Minimap** — 호실 번호를 항상 표시하고 현재·방문·잠금 상태를 색으로 구분
+[ ] **Minimap** — 호실 번호를 항상 표시하고 현재·방문·잠금 상태를 색으로 구분
 
-[] **Online Leaderboard** — 닉네임 기반 클리어 타임 랭킹(동률 시 힌트 적은 순)
+[ ] **Online Leaderboard** — 닉네임 기반 클리어 타임 랭킹(동률 시 힌트 적은 순)
 
-[] **Operation**
+[ ] **Operation**
 
 | input | action |
 |---|---|
@@ -62,7 +62,7 @@
 
 ---
 
-## 🛠️ 기술 스택
+## 기술 스택
 
 | 구분 | 기술 |
 |---|---|
