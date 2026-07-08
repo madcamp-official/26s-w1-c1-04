@@ -40,15 +40,13 @@
 
 ## ✨ 핵심 기능
 
-**거리뷰형 1인칭 탐험** — 방향키/WASD 이동 + 마우스 클릭 상호작용, 새로고침 없는 단일 화면
+**Top-down movement** — 방향키/WASD 이동 + 마우스 클릭 상호작용, 새로고침 없는 단일 화면
 
-**손전등 시야 시스템** — 어둠 속에서 손전등 반경만 밝게, 탐색의 긴장감
+**Flashlight-based visibility system** — 어둠 속에서 손전등 반경만 밝게, 탐색의 긴장감
 
-**미니맵** — 호실 번호를 항상 표시하고 현재·방문·잠금 상태를 색으로 구분
+**Minimap** — 호실 번호를 항상 표시하고 현재·방문·잠금 상태를 색으로 구분
 
-**온라인 리더보드** — 닉네임 기반 클리어 타임 랭킹(동률 시 힌트 적은 순)
-
-**합성 앰비언트 BGM** — 외부 음원 없이 Web Audio API로 코드 생성
+**Online Leaderboard** — 닉네임 기반 클리어 타임 랭킹(동률 시 힌트 적은 순)
 
 ---
 
@@ -57,7 +55,7 @@
 | 입력 | 동작 |
 |---|---|
 | `방향키` / `WASD` | 이동 |
-| `마우스 클릭` | 오브젝트 상호작용 / 퍼즐 입력 |
+| `마우스 클릭`/ E | 오브젝트 상호작용 / 퍼즐 입력 |
 | `F` | 손전등 On/Off |
 | 화면 키패드 | 도어락 · 숫자 · 한글 자판 · A~Z 입력 (물리 키보드 없이도 가능) |
 
@@ -74,28 +72,6 @@
 | **협업** | GitHub (브랜치 전략) · VS Code |
 
 > 순수 웹 표준으로 구현해 **어떤 브라우저에서도 링크 접속 즉시 실행**되도록 설계했습니다.
-
----
-
-## 🚀 실행 방법
-
-```bash
-# 클론 후 서버 실행 (리더보드 포함)
-git clone https://github.com/madcamp-official/26s-w1-c1-04.git
-cd "26s-w1-c1-04/업데이트 모델"
-npm install
-npm start          # → http://localhost:3000
-```
-
-> 게임만 확인하려면 `업데이트 모델/public/index.html` 을 브라우저로 바로 열어도 됩니다(리더보드는 서버가 떠 있어야 저장·조회).
-> **요구사항:** Node.js 18+ / 최신 Chrome·Edge 권장. 별도 빌드 과정 없음.
-
-**환경 변수**
-
-| 변수 | 기본값 | 설명 |
-|---|---|---|
-| `PORT` | `3000` | 서버 포트 |
-| `ADMIN_CODE` | `omokterry` | 리더보드 초기화용 관리자 코드 |
 
 ---
 
@@ -125,7 +101,6 @@ npm start          # → http://localhost:3000
 |---|---|---|
 | `nickname` | string | 닉네임 (최대 12자) |
 | `clearTimeMs` | number | 클리어 시간(ms), `> 0` |
-| `hints` | number | 사용 힌트 수 (동률 tie-break) |
 | `clearedAt` | string(ISO8601) | 클리어 시각(UTC, 서버 생성) |
 
 **REST API** (`업데이트 모델/server/index.js`)
@@ -142,27 +117,27 @@ npm start          # → http://localhost:3000
 
 ## 🌐 배포
 
-- **서비스 URL:** _배포 후 링크 추가 예정_
+- **서비스 URL:** https://terry2549.madcamp-kaist.org/move2d_update.html
 - **저장소:** https://github.com/madcamp-official/26s-w1-c1-04
-- Node 서버가 필요하므로 Render/Railway/Fly.io 등에 `업데이트 모델/` 을 배포(빌드 `npm install`, 시작 `npm start`). 정적 호스팅만 하면 게임은 되지만 리더보드는 비활성.
 
 ---
 
 ## 🔁 회고 (KPT)
 
-> 개발 과정의 어려움·해결 방법·역할 분담·개선할 점을 팀이 직접 정리합니다.
-
 ### Keep
 
--
+- 게임 분위기에 맞는 디자인
+- 높은 퀄리티의 문제 제공
 
 ### Problem
 
--
+- 유지보수성과 확장성이 떨어지는 단일 HTML 개발.
+- 문제 데이터 베이스를 구축했으나, 단일 HTML에서 구동시킴. 
 
 ### Try
 
--
+- 실제 건물 기반 거리뷰 이동방식
+- 닉네임별 진행상황 저장
 
 ---
 
@@ -185,12 +160,5 @@ npm start          # → http://localhost:3000
 
 ## 📚 참고 자료
 
-- [SDD(스펙 주도 개발) 이해하기](https://news.hada.io/topic?id=21338)
-- [Software Design Document Best Practices](https://www.atlassian.com/work-management/project-management/design-document)
-- [IA 정보구조도 작성 방법](https://brunch.co.kr/@nyonyo/7)
-- [기획자 화면설계서 작성법](https://brunch.co.kr/@soup/10)
-- [Figma 와이어프레임 가이드](https://www.figma.com/ko-kr/resource-library/what-is-wireframing/)
-- [ERD/DB 설계 총정리](https://inpa.tistory.com/entry/DB-%F0%9F%93%9A-%EB%8D%B0%EC%9D%B4%ED%84%B0-%EB%AA%A8%EB%8D%B8%EB%A7%81-%EA%B0%9C%EB%85%90-ERD-%EB%8B%A4%EC%9D%B4%EC%96%B4%EA%B7%B8%EB%9E%A8)
-- [API 명세서 작성 가이드라인](https://velog.io/@sebinChu/BackEnd-API-%EB%AA%85%EC%84%B8%EC%84%9C-%EC%9E%91%EC%84%B1-%EA%B0%80%EC%9D%B4%EB%93%9C-%EB%9D%BC%EC%9D%B8)
-- [좋은 README 작성하는 방법](https://velog.io/@sabo/good-readme)
-- [단기 프로젝트 회고 KPT 방법론](https://velog.io/@habwa/%EB%8B%A8%EA%B8%B0-%ED%94%84%EB%A1%9C%EC%A0%9D%ED%8A%B8-%ED%9A%8C%EA%B3%A0-KPT-%EB%B0%A9%EB%B2%95%EB%A1%A0)
+-방탈출고사
+https://roomescapetest.swygbro.com/
