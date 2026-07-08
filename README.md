@@ -78,14 +78,14 @@
 
 ## IA 및 화면 설계서
 
-```
 
-[img width="583" height="355" alt="image" src="https://github.com/user-attachments/assets/7ed6634b-f99e-4504-b5a4-28a4d7ec88b1" /]
 
-```
+<img width="583" height="355" alt="image" src="https://github.com/user-attachments/assets/7ed6634b-f99e-4504-b5a4-28a4d7ec88b1" />
+
+
 
 주요 화면: **프로필/시작**(닉네임·리더보드) · **게임 플레이**(캔버스 + 미니맵·인벤토리·저널·손전등·조각 HUD) · **퍼즐 모달**(입력 UI·힌트 위젯) · **엔딩**(서술 결말·랭킹).
-[img width="584" height="353" alt="image" src="https://github.com/user-attachments/assets/6874f3d6-2fca-48e6-a304-a33afc0aff73" /]
+<img width="584" height="353" alt="image" src="https://github.com/user-attachments/assets/6874f3d6-2fca-48e6-a304-a33afc0aff73" />
 
 
 ---
