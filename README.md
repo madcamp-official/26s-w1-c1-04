@@ -148,6 +148,24 @@ npm start          # → http://localhost:3000
 
 ---
 
+## 🔁 회고 (KPT)
+
+> 개발 과정의 어려움·해결 방법·역할 분담·개선할 점을 팀이 직접 정리합니다.
+
+### Keep
+
+-
+
+### Problem
+
+-
+
+### Try
+
+-
+
+---
+
 ## 📁 프로젝트 구조
 
 ```
@@ -176,10 +194,3 @@ npm start          # → http://localhost:3000
 - [API 명세서 작성 가이드라인](https://velog.io/@sebinChu/BackEnd-API-%EB%AA%85%EC%84%B8%EC%84%9C-%EC%9E%91%EC%84%B1-%EA%B0%80%EC%9D%B4%EB%93%9C-%EB%9D%BC%EC%9D%B8)
 - [좋은 README 작성하는 방법](https://velog.io/@sabo/good-readme)
 - [단기 프로젝트 회고 KPT 방법론](https://velog.io/@habwa/%EB%8B%A8%EA%B8%B0-%ED%94%84%EB%A1%9C%EC%A0%9D%ED%8A%B8-%ED%9A%8C%EA%B3%A0-KPT-%EB%B0%A9%EB%B2%95%EB%A1%A0)
-
-<div align="center">
-<br>
-
-*"탈출했다"가 아니라, **"내가 하나의 사건을 추리해냈다"** 는 감정을 남기는 것.*
-
-</div>
