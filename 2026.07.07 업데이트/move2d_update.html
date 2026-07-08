@@ -1610,7 +1610,22 @@ addEventListener("resize",()=>{ if(memOpen) sizeMemFx(); });
    ========================================================================= */
 function fmtTime(ms){ const s=Math.floor(ms/1000); return Math.floor(s/60)+"분 "+(s%60)+"초"; }
 function escapeHTML(s){ return String(s).replace(/[&<>"']/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
-const API_BASE = location.protocol==="file:" ? "http://localhost:3000" : "";
+const API_BASES = location.protocol==="file:"
+  ? ["http://localhost:8080","http://localhost:3000"]
+  : ["", `${location.protocol}//${location.hostname}:8080`, `${location.protocol}//${location.hostname}:3000`];
+async function apiFetch(path, options){
+  let lastError=null;
+  for(const base of API_BASES){
+    try{
+      const res=await fetch(`${base}${path}`, options);
+      if(res.status===404){ lastError=new Error("HTTP 404"); continue; }
+      return res;
+    }catch(e){
+      lastError=e;
+    }
+  }
+  throw lastError || new Error("API 연결 실패");
+}
 function renderLeaderboard(scores, targetId="leaderboardList"){
   const box=document.getElementById(targetId);
   if(!box) return;
@@ -1620,7 +1635,7 @@ function renderLeaderboard(scores, targetId="leaderboardList"){
 }
 async function loadLeaderboard(targetId="leaderboardList"){
   try{
-    const res=await fetch(`${API_BASE}/api/leaderboard`);
+    const res=await apiFetch(`/api/leaderboard`);
     if(!res.ok) throw new Error("leaderboard");
     const scores=await res.json();
     renderLeaderboard(scores, targetId);
@@ -1634,12 +1649,19 @@ async function loadLeaderboard(targetId="leaderboardList"){
 async function submitScore(clearTimeMs){
   if(gameState.admin) return { ok:true, skipped:true };
   try{
-    const res=await fetch(`${API_BASE}/api/scores`,{
+    const res=await apiFetch(`/api/scores`,{
       method:"POST",
       headers:{"Content-Type":"application/json"},
       body:JSON.stringify({ nickname:gameState.nickname, clearTimeMs, hints:gameState.hints })
     });
-    if(!res.ok) throw new Error("score");
+    if(!res.ok){
+      let msg="score";
+      try{
+        const data=await res.json();
+        if(data.error) msg=data.error;
+      }catch(e){}
+      throw new Error(msg+" (HTTP "+res.status+")");
+    }
     return { ok:true };
   }catch(e){
     return { ok:false, error:e };
@@ -1657,7 +1679,7 @@ async function resetLeaderboard(){
   try{
     if(btn) btn.disabled=true;
     if(status) status.textContent="리더보드를 초기화하는 중...";
-    const res=await fetch(`${API_BASE}/api/leaderboard/reset`,{
+    const res=await apiFetch(`/api/leaderboard/reset`,{
       method:"POST",
       headers:{"Content-Type":"application/json"},
       body:JSON.stringify({ adminCode:(input.value||"").trim() })
@@ -1737,7 +1759,7 @@ function winGame(){
       status.textContent=scoreResult.skipped ? "관리자 모드 기록은 저장하지 않습니다." : "리더보드에 기록을 저장했습니다.";
       await loadLeaderboard("win-leaderboard");
     } else {
-      status.textContent="기록 저장에 실패했습니다. 서버 주소로 접속했는지 확인하세요.";
+      status.textContent="기록 저장에 실패했습니다: "+(scoreResult.error?.message||"서버 연결 오류");
     }
   };
   submitScore(clearTimeMs).then(result=>{

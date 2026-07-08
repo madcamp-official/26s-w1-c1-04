@@ -397,9 +397,9 @@ const FLOOR1 = buildFloor({ name:"1층",
     { id:"river",     room:"103",        x:935, y:250,  icon:"⛵", label:"서버실 배전반",puzzle:"river" },
     { id:"liar",      room:"101",        x:935, y:665,  icon:"🕵️", label:"손 신호",   puzzle:"liar" },
     { id:"ev1",       room:"복도",       x:842, y:881,  icon:"🛗", label:"엘리베이터",    puzzle:"elevator" },
-    { id:"n102",      room:"102",        x:935, y:460,  icon:"📄", label:"노션 · 오늘 할 일", puzzle:"flavor", flavor:"화면에 노션이 켜져 있다. '오늘 할 일' 목록이 며칠째 글자 하나 안 바뀐 채 똑같다. 완료 체크만, 지웠다 다시 그은 자국이 겹쳐 있다." },
-    { id:"n106",      room:"106",        x:560, y:814,  icon:"📄", label:"택배 상자",     puzzle:"flavor", flavor:"빈 택배 상자. 송장에 찍힌 날짜가 오늘 하루에만 여러 번 겹쳐 찍혀 있다." },
-    { id:"n107",      room:"107",        x:910, y:1020, icon:"📄", label:"청소 도구함",   puzzle:"flavor", flavor:"대걸레와 양동이. 젖은 발자국 한 쌍이 옥상 계단 쪽으로만 나 있다." },
+    { id:"n102",      room:"102",        x:935, y:460,  icon:"📄", label:"노션 · 오늘 할 일", puzzle:"flavor", flavor:"102호 개인석. 화면에 노션 '오늘 할 일'이 켜진 채다 — 며칠째 글자 하나 안 바뀌었다. 완료 체크만 지웠다 다시 그은 자국이 겹겹이. 커서는 마지막 줄에서 깜빡이기만 한다." },
+    { id:"n106",      room:"106",        x:560, y:814,  icon:"📄", label:"택배 상자",     puzzle:"flavor", flavor:"106호 창고. 빈 택배 상자 하나. 송장에 찍힌 날짜가 오늘 하루에만 몇 번이고 겹쳐 찍혀 있고, 받는 사람 칸은 비어 있다." },
+    { id:"n107",      room:"107",        x:910, y:1020, icon:"📄", label:"청소 도구함",   puzzle:"flavor", flavor:"107호 청소함. 대걸레와 양동이. 젖은 발자국 한 쌍이 옥상 계단 쪽으로만 나 있다 — 돌아온 자국은 없다." },
   ],
 });
 
@@ -441,6 +441,8 @@ const gameState = {
   hints:0,
   started:false,
   startTime:0,
+  playedMs:0,          // 이어하기 시 누적되는 플레이 시간
+  hintClock:{},        // 퍼즐별 첫 진입 시각(힌트 10분 게이트)
   nickname:"",
   admin:false,
   visited:new Set(),
@@ -901,7 +903,7 @@ function startAudio(){ if(AENG.ctx) return; try{
 }catch(e){} }
 function startAmbientMusic(){ try{
   const C=AENG.ctx; if(!C||AENG.music) return;
-  const bus=C.createGain(); bus.gain.value=0.075; bus.connect(AENG.lp);
+  const bus=C.createGain(); bus.gain.value=0.1; bus.connect(AENG.lp);
   const low=C.createOscillator(), lowGain=C.createGain(), lowFilter=C.createBiquadFilter();
   low.type="sine"; low.frequency.value=55; lowFilter.type="lowpass"; lowFilter.frequency.value=180; lowGain.gain.value=0.18;
   low.connect(lowFilter); lowFilter.connect(lowGain); lowGain.connect(bus); low.start();
@@ -917,7 +919,7 @@ function ambientPhrase(){ try{
   o.type="triangle"; o.frequency.setValueAtTime(notes[idx]*(idx%2?0.995:1.005),t);
   f.type="lowpass"; f.frequency.value=720; f.Q.value=1.2;
   g.gain.setValueAtTime(0.0001,t);
-  g.gain.linearRampToValueAtTime(0.045,t+0.08);
+  g.gain.linearRampToValueAtTime(0.058,t+0.08);
   g.gain.exponentialRampToValueAtTime(0.0001,t+2.8);
   o.connect(f); f.connect(g); g.connect(AENG.music.bus); o.start(t); o.stop(t+3.0);
   AENG.music.timers.push(setTimeout(ambientPhrase, 2200+Math.random()*1900));
@@ -977,7 +979,7 @@ function updateAudio(){ if(!AENG.ctx) return; try{ const C=AENG.ctx,t=C.currentT
     if(!gameState.flags.finalLull) AENG.tempo = 1120 - 360*D;                            // 심박이 조금씩 빨라진다
     AENG.drone.forEach((d2,i)=>{ try{ d2.g.gain.setTargetAtTime(d2.base*(0.32+1.15*D),t,0.6); // 죽었던 베드가 dread로 되살아나 부푼다
       if(i===1) d2.o.frequency.setTargetAtTime(d2.f + 0.6 + 1.8*D, t, 0.8); }catch(e){} }); } // 42 vs 42.6+ → 느린 맥놀이
-  if(AENG.music && !memOpen){ const D=dreadState.t; AENG.music.bus.gain.setTargetAtTime(0.055+0.035*D,t,0.9); AENG.music.low.frequency.setTargetAtTime(55-7*D,t,1.2); }
+  if(AENG.music && !memOpen){ const D=dreadState.t; AENG.music.bus.gain.setTargetAtTime(0.08+0.04*D,t,0.9); AENG.music.low.frequency.setTargetAtTime(55-7*D,t,1.2); }
   const br=0.5+0.5*Math.sin(pulse*0.55);
   if(AENG.breath){ AENG.breath.f.frequency.setTargetAtTime(420+230*br,t,0.3); AENG.breath.g.gain.setTargetAtTime((gameState.hasFlashlight?0.010:0.03)*(0.4+0.6*br),t,0.3); }
   const dark = gameState.intro && !gameState.hasFlashlight;
@@ -996,21 +998,29 @@ function shakeCard(){ card.classList.remove("shake"); void card.offsetWidth; car
 function flashCard(){ card.classList.remove("flash"); void card.offsetWidth; card.classList.add("flash"); sOk(); }
 overlay.addEventListener("click",e=>{ if(e.target===overlay && currentPuzzle!=="exit") closeModal(); });
 
-// 힌트 위젯
+// 힌트 위젯 — 그 퍼즐에 '처음 들어간 시각'으로부터 10분이 지나야만, 딱 한 번 열린다.
+const HINT_DELAY_MS = 600000;   // 10분
 function hintWidget(hints){
-  hintState={hints,shown:0,t0:Date.now(),wrong:0};
-  return `<div class="hintbox"><button class="hbtn" id="hbtn" disabled>힌트 (잠시 후 활성)</button><div class="htxt" id="htxt"></div></div>`;
+  const key = currentPuzzle || "_";
+  gameState.hintClock = gameState.hintClock || {};
+  if(!gameState.hintClock[key]) gameState.hintClock[key]=Date.now();   // 첫 진입 시각 고정(닫았다 다시 열어도 유지)
+  hintState={hints,shown:0,t0:gameState.hintClock[key],wrong:0};
+  return `<div class="hintbox"><button class="hbtn" id="hbtn" disabled>힌트 (10분 뒤 열림)</button><div class="htxt" id="htxt"></div></div>`;
 }
 function wireHint(){
   const b=document.getElementById("hbtn"); if(!b||!hintState) return;
+  const fmt=ms=>{ const s=Math.max(0,Math.ceil(ms/1000)); return Math.floor(s/60)+":"+String(s%60).padStart(2,"0"); };
   const tick=setInterval(()=>{
     if(!hintState||!document.getElementById("hbtn")){ clearInterval(tick); return; }
-    const ready = (Date.now()-hintState.t0>25000) || hintState.wrong>=2;
-    if(ready && hintState.shown<hintState.hints.length){ b.disabled=false; b.textContent="힌트 보기 ("+(hintState.shown+1)+"/"+hintState.hints.length+")"; }
+    if(hintState.shown>0) return;
+    const left = HINT_DELAY_MS-(Date.now()-hintState.t0);
+    if(left<=0){ b.disabled=false; b.textContent="힌트 보기 (1회)"; }
+    else b.textContent="힌트 ("+fmt(left)+" 뒤 열림)";
   },500);
-  b.onclick=()=>{ if(hintState.shown>=hintState.hints.length) return; const tx=document.getElementById("htxt");
-    tx.innerHTML+=(tx.innerHTML?"<br>":"")+"• "+hintState.hints[hintState.shown]; hintState.shown++; gameState.hints++;
-    if(hintState.shown>=hintState.hints.length){ b.disabled=true; b.textContent="힌트 모두 사용"; } else b.disabled=true; };
+  b.onclick=()=>{ if(hintState.shown>0 || Date.now()-hintState.t0<HINT_DELAY_MS) return;   // 딱 한 번, 10분 경과 후에만
+    const tx=document.getElementById("htxt");
+    tx.innerHTML="• "+hintState.hints[0]; hintState.shown=1; gameState.hints++;
+    b.disabled=true; b.textContent="힌트 사용함"; };
 }
 function wrongPulse(){ if(hintState) hintState.wrong++; shakeCard(); }
 
@@ -1471,25 +1481,35 @@ function openExit(goal){
     return;
   }
   currentPuzzle="exit";
-  let placed={a:false,b:false,g:false,d:false,e:false};
-  const sock=(k,role)=>`<div class="socket sf" data-k="${k}"><div class="wing">${role}</div><div class="big">＋</div><div class="wing">${SYM[k]}</div></div>`;
+  let held=null;                                       // 집어든 조각
+  const slots=[null,null,null,null,null];              // 위치 0..4 = 시·분十·분一·초十·초一
+  const ROLES=['시','분','분','초','초'];
+  const slotHTML=i=>`<div class="socket sf" data-pos="${i}"><div class="wing">${ROLES[i]}</div><div class="big">${slots[i]?f[slots[i]]:'＋'}</div><div class="wing">${slots[i]?SYM[slots[i]]:'&nbsp;'}</div></div>`;
+  const chipHTML=k=>`<button class="btn" data-frag="${k}" style="min-width:58px;padding:8px 6px;display:flex;flex-direction:column;align-items:center;gap:2px${held===k?';border-color:var(--warm);background:rgba(214,172,99,.16)':''}"><span style="font-family:var(--mono);font-size:1.4rem;color:var(--warm)">${f[k]}</span><span style="font-size:.66rem;color:var(--muted)">${SYM[k]}</span></button>`;
   openModal(`<h2>${ic('doorx',22)} 옥상으로 가는 문</h2>
-    <p class="sub">다섯 증거가 저마다 숫자 하나씩을 품고 있었다. 시·분·초 자리에 끼워 그날 새벽의 시각을 복원한다.</p>
-    <div class="sockets" id="socks">${sock('a','시')}<span class="scolon">:</span>${sock('b','분')}${sock('g','분')}<span class="scolon">:</span>${sock('d','초')}${sock('e','초')}</div>
+    <p class="sub">기억이 가리키는 시각 — <b>3시 14분 15초</b>. 다섯 조각의 숫자를 <b>직접</b> 시·분·초 자리에 끼워 맞춰라. 어긋나면, 난간 너머다.</p>
+    <div id="fpool" style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin:6px 0 12px"></div>
+    <div class="sockets" id="socks"></div>
     <div class="kp-disp" id="final" style="font-size:1.85rem">＿ : ＿＿ : ＿＿</div>
     <div id="finalnote" style="text-align:center;color:var(--muted);font-size:.85rem;min-height:20px;margin:-2px 0 6px"></div>
     <div class="row center"><button class="btn primary" id="escBtn" disabled>옥상으로 올라간다</button></div>`);
-  const dg=k=>placed[k]?f[k]:"＿";
-  const upd=()=>{ const done=KEYS.every(k=>placed[k]);
-    const code=KEYS.map(k=>placed[k]?f[k]:"").join("");
-    document.getElementById("final").textContent=dg('a')+" : "+dg('b')+dg('g')+" : "+dg('d')+dg('e');
-    document.getElementById("finalnote").textContent = done ? (code==="31415" ? "…벽시계가 멈춰 있던, 바로 그 시각. 3시 14분 15초." : "…숫자가 어긋난다. 난간 너머에서 바람이 분다.") : "";
-    if(done) gameState.flags.finalLull=true;                   // 마지막 조각이 맞춰지는 순간, 거짓 정적(숨 고르기) — 이어질 결말의 충격을 위해
-    document.getElementById("escBtn").disabled=!done; };
-  document.getElementById("socks").onclick=e=>{ const s=e.target.closest(".socket"); if(!s)return; const k=s.dataset.k;
-    if(placed[k])return; placed[k]=true; s.classList.add("filled"); s.querySelector(".big").textContent=f[k]; beep(560,0.08); upd(); };
-  document.getElementById("escBtn").onclick=()=>{ flashCard();
-    const code=KEYS.map(k=>f[k]).join("");
+  const dg=i=>slots[i]?f[slots[i]]:"＿";
+  const draw=()=>{
+    document.getElementById("fpool").innerHTML=KEYS.filter(k=>!slots.includes(k)).map(chipHTML).join("") || `<span style="color:var(--muted);font-size:.82rem;padding:8px">— 자리를 다시 비우려면 그 칸을 눌러라 —</span>`;
+    document.getElementById("socks").innerHTML=`${slotHTML(0)}<span class="scolon">:</span>${slotHTML(1)}${slotHTML(2)}<span class="scolon">:</span>${slotHTML(3)}${slotHTML(4)}`;
+    document.getElementById("final").textContent=dg(0)+" : "+dg(1)+dg(2)+" : "+dg(3)+dg(4);
+    const done=slots.every(x=>x);
+    document.getElementById("escBtn").disabled=!done;
+    if(done) gameState.flags.finalLull=true;
+  };
+  draw();
+  document.getElementById("fpool").onclick=e=>{ const b=e.target.closest("[data-frag]"); if(!b)return; held=(held===b.dataset.frag?null:b.dataset.frag); beep(500,.04); draw(); };
+  document.getElementById("socks").onclick=e=>{ const s=e.target.closest(".socket"); if(!s)return; const i=+s.dataset.pos;
+    if(slots[i]){ slots[i]=null; beep(360,.05); }                 // 채워진 칸 → 조각 회수
+    else if(held){ slots[i]=held; held=null; beep(560,.07); }     // 집어든 조각 배치
+    draw(); };
+  document.getElementById("escBtn").onclick=()=>{ if(!slots.every(x=>x)) return; flashCard();
+    const code=slots.map(k=>f[k]).join("");                       // 어긋나면 fallReset → 처음으로(플레이타임만 누적)
     setTimeout(()=>{ closeModal(); if(code==="31415"){ gameState.flags.escaped=true; winGame(); } else fallReset(); },700); };
 }
 
@@ -1656,7 +1676,20 @@ addEventListener("resize",()=>{ if(memOpen) sizeMemFx(); });
    ========================================================================= */
 function fmtTime(ms){ const s=Math.floor(ms/1000); return Math.floor(s/60)+"분 "+(s%60)+"초"; }
 function escapeHTML(s){ return String(s).replace(/[&<>"']/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
-const API_BASE = location.protocol==="file:" ? "http://localhost:3000" : "";
+const API_BASES = location.protocol==="file:"
+  ? ["http://localhost:8080","http://localhost:3000"]
+  : ["", `${location.protocol}//${location.hostname}:8080`, `${location.protocol}//${location.hostname}:3000`];
+async function apiFetch(path, options){
+  let lastError=null;
+  for(const base of API_BASES){
+    try{
+      const res=await fetch(`${base}${path}`, options);
+      if(res.status===404){ lastError=new Error("HTTP 404"); continue; }
+      return res;
+    }catch(e){ lastError=e; }
+  }
+  throw lastError || new Error("API 연결 실패");
+}
 function renderLeaderboard(scores, targetId="leaderboardList"){
   const box=document.getElementById(targetId);
   if(!box) return;
@@ -1666,7 +1699,7 @@ function renderLeaderboard(scores, targetId="leaderboardList"){
 }
 async function loadLeaderboard(targetId="leaderboardList"){
   try{
-    const res=await fetch(`${API_BASE}/api/leaderboard`);
+    const res=await apiFetch(`/api/leaderboard`);
     if(!res.ok) throw new Error("leaderboard");
     const scores=await res.json();
     renderLeaderboard(scores, targetId);
@@ -1680,12 +1713,16 @@ async function loadLeaderboard(targetId="leaderboardList"){
 async function submitScore(clearTimeMs){
   if(gameState.admin) return { ok:true, skipped:true };
   try{
-    const res=await fetch(`${API_BASE}/api/scores`,{
+    const res=await apiFetch(`/api/scores`,{
       method:"POST",
       headers:{"Content-Type":"application/json"},
       body:JSON.stringify({ nickname:gameState.nickname, clearTimeMs, hints:gameState.hints })
     });
-    if(!res.ok) throw new Error("score");
+    if(!res.ok){
+      let msg="score";
+      try{ const data=await res.json(); if(data.error) msg=data.error; }catch(e){}
+      throw new Error(msg+" (HTTP "+res.status+")");
+    }
     return { ok:true };
   }catch(e){
     return { ok:false, error:e };
@@ -1703,7 +1740,7 @@ async function resetLeaderboard(){
   try{
     if(btn) btn.disabled=true;
     if(status) status.textContent="리더보드를 초기화하는 중...";
-    const res=await fetch(`${API_BASE}/api/leaderboard/reset`,{
+    const res=await apiFetch(`/api/leaderboard/reset`,{
       method:"POST",
       headers:{"Content-Type":"application/json"},
       body:JSON.stringify({ adminCode:(input.value||"").trim() })
@@ -1760,11 +1797,12 @@ function resetDoors(){
 }
 function resetToFirstPlayable(){
   const nickname=gameState.nickname, admin=gameState.admin;
+  const carryMs=(gameState.playedMs||0)+(Date.now()-gameState.startTime);   // 되돌아가도 플레이타임만은 누적 유지
   Object.keys(keys).forEach(k=>keys[k]=false);
   resetDoors();
   Object.assign(gameState,{
     flags:{}, inventory:[], journal:[], fragments:{a:null,b:null,g:null,d:null,e:null},
-    flashlight:false, hasFlashlight:false, hints:0, started:true, startTime:Date.now(),
+    flashlight:false, hasFlashlight:false, hints:0, hintClock:{}, started:true, startTime:Date.now(), playedMs:carryMs,
     nickname, admin, visited:new Set(), recSources:new Set(), intro:true, waking:false
   });
   ["a","b","g","d","e"].forEach(k=>{ const e=document.getElementById("f-"+k); if(e){ e.classList.remove("on"); e.querySelector("b").textContent="·"; } });
@@ -1800,7 +1838,7 @@ function fallReset(){
 }
 function winGame(){
   sOk();
-  const clearTimeMs=Date.now()-gameState.startTime;
+  const clearTimeMs=(gameState.playedMs||0)+(Date.now()-gameState.startTime);   // 환생(되돌아감)으로 누적된 플레이 시간까지 합산
   const stat=`${gameState.nickname} · 경과 ${fmtTime(clearTimeMs)} · 사용한 힌트 ${gameState.hints}개`;
   const T=document.getElementById("win-title"), B=document.getElementById("win-body"),
         K=document.getElementById("win-keys"), RB=document.getElementById("restartBtn");
@@ -1813,7 +1851,7 @@ function winGame(){
       status.textContent=scoreResult.skipped ? "관리자 모드 기록은 저장하지 않습니다." : "리더보드에 기록을 저장했습니다.";
       await loadLeaderboard("win-leaderboard");
     } else {
-      status.textContent="기록 저장에 실패했습니다. 서버 주소로 접속했는지 확인하세요.";
+      status.textContent="기록 저장에 실패했습니다: "+(scoreResult.error?.message||"서버 연결 오류");
     }
   };
   submitScore(clearTimeMs).then(result=>{

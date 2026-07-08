@@ -111,5 +111,5 @@ app.use((err, req, res, next) => {
 });
 
 app.listen(PORT, () => {
-  console.log(`Leaderboard server running at http://localhost:${PORT}/move2d.html`);
+  console.log(`Leaderboard server running at http://localhost:${PORT}/move2d_update.html`);
 });
