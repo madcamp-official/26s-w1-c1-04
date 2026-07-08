@@ -4,7 +4,8 @@ const path = require("path");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
-const SCORE_FILE = path.join(__dirname, "scores.json");
+const PUBLIC_DIR = path.join(__dirname, "..", "public");
+const SCORE_FILE = path.join(__dirname, "..", "data", "scores.json");
 const MAX_LEADERBOARD = 10;
 const ADMIN_CODE = process.env.ADMIN_CODE || "omokterry";
 
@@ -16,8 +17,8 @@ app.use((req, res, next) => {
   if (req.method === "OPTIONS") return res.sendStatus(204);
   next();
 });
-app.get("/", (req, res) => res.redirect("/move2d_update.html"));
-app.use(express.static(__dirname));
+app.get("/", (req, res) => res.sendFile(path.join(PUBLIC_DIR, "index.html")));
+app.use(express.static(PUBLIC_DIR));
 
 async function readScores() {
   try {
@@ -111,5 +112,5 @@ app.use((err, req, res, next) => {
 });
 
 app.listen(PORT, () => {
-  console.log(`Leaderboard server running at http://localhost:${PORT}/move2d_update.html`);
+  console.log(`Leaderboard server running at http://localhost:${PORT}/`);
 });
